@@ -1,0 +1,155 @@
+name: Turn issue submission into PR
+
+on:
+  issues:
+    types: [labeled, edited]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  submit:
+    if: >-
+      github.event.issue.state == 'open' &&
+      contains(join(github.event.issue.labels.*.name, ','), 'submission:work')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: submission-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
+      ISSUE_URL: ${{ github.event.issue.html_url }}
+      SUBMITTED_BY: ${{ github.event.issue.user.login }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      RESULT_FILE: submission-result.json
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for an existing open submission PR
+        id: existing
+        uses: actions/github-script@v9
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        with:
+          script: |
+            const branch = `submission/issue-${process.env.ISSUE_NUMBER}`
+            const { data } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${branch}`,
+              per_page: 1,
+            })
+            core.setOutput('exists', data.length ? 'true' : 'false')
+            core.setOutput('url', data[0]?.html_url || '')
+
+      - name: Comment on the existing PR
+        if: steps.existing.outputs.exists == 'true'
+        uses: actions/github-script@v9
+        env:
+          EXISTING_PR_URL: ${{ steps.existing.outputs.url }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `这个投稿已经有一个开放的 PR：${process.env.EXISTING_PR_URL}`,
+            })
+
+      - name: Normalize submission data
+        id: append
+        if: steps.existing.outputs.exists != 'true'
+        continue-on-error: true
+        run: node scripts/append-submission.mjs
+
+      - name: Explain invalid submission
+        if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'failure'
+        uses: actions/github-script@v9
+        env:
+          RESULT_FILE: submission-result.json
+        with:
+          script: |
+            const fs = require('node:fs')
+            const result = JSON.parse(fs.readFileSync(process.env.RESULT_FILE, 'utf8'))
+            const errors = (result.errors || []).map((error) => `- ${error}`).join('\n')
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['needs-info'],
+            })
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `这个投稿暂时还不能生成 PR，请补充或修正以下内容：\n\n${errors}`,
+            })
+
+      - name: Build submission branch
+        if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Push submission branch
+        if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'
+        env:
+          BRANCH: submission/issue-${{ github.event.issue.number }}
+          WORK_TITLE: ${{ steps.append.outputs.work_title }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add src/data/submissions.json
+          git commit -m "feat(submission): add $WORK_TITLE from issue #${ISSUE_NUMBER}"
+          git push --set-upstream origin "$BRANCH"
+
+      - name: Create submission PR
+        if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'
+        uses: actions/github-script@v9
+        env:
+          BRANCH: submission/issue-${{ github.event.issue.number }}
+          WORK_TITLE: ${{ steps.append.outputs.work_title }}
+        with:
+          script: |
+            const body = [
+              '## 洛天依同人作品投稿',
+              '',
+              `- 作品标题：${process.env.WORK_TITLE}`,
+              `- 原 Issue：#${context.issue.number}`,
+              `- 投稿人：@${context.payload.issue.user.login}`,
+              '',
+              `Related to #${context.issue.number}`,
+              '',
+              '这是由 Issue 投稿 Action 自动生成的 PR。请先确认内容与版权声明，再合并。',
+            ].join('\n')
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: process.env.BRANCH,
+              base: 'main',
+              title: `feat(submission): add ${process.env.WORK_TITLE} from issue #${context.issue.number}`,
+              body,
+              maintainer_can_modify: true,
+            })
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `投稿已整理为 PR：${pr.html_url}\n\n等待构建检查与维护者审核。`,
+            })

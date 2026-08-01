@@ -1,0 +1,81 @@
+name: 洛天依同人作品投稿
+description: 把你的曲绘、插画、PV 或 3D 作品送进天依档案。
+title: "[投稿] "
+labels:
+  - submission:work
+  - awaiting-review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你为洛天依留下新的声音与画面。请提交你拥有发布权的作品。
+        图片请直接拖拽到“作品图片”字段，GitHub 会生成附件链接。
+
+  - type: input
+    id: work_title
+    attributes:
+      label: 作品标题 / Work title
+      placeholder: 例如：天依蓝的夏天
+    validations:
+      required: true
+
+  - type: input
+    id: creator_name
+    attributes:
+      label: 创作者名称 / Creator name
+      placeholder: 你的昵称或署名
+    validations:
+      required: true
+
+  - type: input
+    id: creator_handle
+    attributes:
+      label: 创作者主页 ID / Creator handle
+      description: 可填写 GitHub、Bilibili、微博或其他平台 ID，不需要带 @。
+      placeholder: creator_id
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 作品类型 / Category
+      options:
+        - 插画
+        - 曲绘
+        - PV / 动画
+        - 3D
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: image
+    attributes:
+      label: 作品图片 / Artwork image
+      description: 必填。请直接把一张图片拖到这里，等待 GitHub 生成 user-attachments 链接。
+      placeholder: 将图片拖到这里...
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 作品简介 / Description
+      description: 介绍作品、创作缘起，或写一句你想对天依说的话。
+      placeholder: 这是一张关于……的作品。
+    validations:
+      required: true
+
+  - type: input
+    id: source_url
+    attributes:
+      label: 原作链接 / Source link
+      description: 可选。填写作品原帖、视频或个人主页的 HTTPS 链接。
+      placeholder: https://...
+
+  - type: checkboxes
+    id: copyright
+    attributes:
+      label: 版权确认 / Copyright confirmation
+      options:
+        - label: 我确认这是我的作品，或我拥有将其发布到天依档案的授权。
+          required: true
