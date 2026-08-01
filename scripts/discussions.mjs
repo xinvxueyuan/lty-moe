@@ -501,6 +501,16 @@ export async function syncDiscussions({
       url: discussion.url,
       error: parsed.error,
     }))
+  if (invalid.length) {
+    await writeFile(
+      reportFile,
+      `${JSON.stringify({ generatedAt: new Date().toISOString(), invalid }, null, 2)}\n`,
+    )
+    throw new Error(`发现 ${invalid.length} 条无效的作品 Discussion；已停止并保留现有快照。`)
+  }
+  if (!publishToDiscussions && submissions.length > 0 && discussions.length === 0) {
+    throw new Error('当前未读取到任何作品 Discussion；为避免清空快照，已停止同步。')
+  }
   await normalizeDiscussions(graphql, discussions)
   discussions = await listDiscussions(graphql, owner, name)
   const normalized = discussions
@@ -510,6 +520,9 @@ export async function syncDiscussions({
     })
     .filter(Boolean)
     .sort((a, b) => a.id.localeCompare(b.id))
+  if (submissions.length > 0 && normalized.length === 0) {
+    throw new Error('Discussion 快照为空但已有历史投稿；为避免数据丢失，已停止同步。')
+  }
   await writeFile(submissionsFile, `${JSON.stringify(normalized, null, 2)}\n`)
   await writeFile(authorsFile, `${JSON.stringify(normalizeAuthors(normalized), null, 2)}\n`)
   const report = {
