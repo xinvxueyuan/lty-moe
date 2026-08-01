@@ -48,6 +48,10 @@ npm run test:e2e
 VITE_BASE_PATH=/lty-moe/ npm run build
 ```
 
+## Security
+
+安全边界、威胁模型、报告渠道和已知限制见 [SECURITY.md](./SECURITY.md)。仓库启用了 Dependabot、secret scanning push protection 和 CodeQL；工作流使用最小权限，第三方 Action 固定到 commit SHA。
+
 ## 许可
 
 代码使用 MIT License。投稿者需要确认其提交内容拥有发布权或已获得授权；作品本身的著作权仍归原作者所有。

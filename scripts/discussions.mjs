@@ -6,6 +6,22 @@ export const DISCUSSION_CATEGORY = '作品档案'
 const graphqlEndpoint = 'https://api.github.com/graphql'
 const submissionsFile = 'src/data/submissions.json'
 const authorsFile = 'src/data/authors.json'
+const reportFile =
+  process.env.REPORT_FILE ||
+  `${process.env.RUNNER_TEMP || '.'}/discussion-normalization-report.json`
+const allowedCategories = [
+  '插画',
+  '曲绘',
+  '摄影',
+  '绘画',
+  '概念设计',
+  'PV / 动画',
+  '3D',
+  '3D / 动画',
+  '其他',
+]
+const allowedAiDisclosures = ['未使用生成式 AI', '使用 AI 辅助创作', '主要由 AI 生成', '未披露']
+const allowedOrigins = ['原创', '转载', '未声明']
 
 export function normalizeAuthorId(handle, creator) {
   return (handle || creator || '')
@@ -40,6 +56,51 @@ export function normalizeTitle(value) {
     .toLowerCase()
 }
 
+function isAllowedImage(value) {
+  try {
+    const url = new URL(value)
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'github.com' &&
+      url.pathname.startsWith('/user-attachments/assets/')
+    )
+  } catch {
+    return false
+  }
+}
+
+export function validateDiscussionPayload(payload) {
+  const errors = []
+  if (!payload || payload.schemaVersion !== 1) errors.push('schemaVersion 必须为 1。')
+  if (!payload?.id || !/^[a-zA-Z0-9_.-]{1,80}$/.test(payload.id)) errors.push('id 无效。')
+  if (!payload?.title || String(payload.title).length > 120)
+    errors.push('title 无效或超过 120 个字符。')
+  if (!payload?.creator || String(payload.creator).length > 80)
+    errors.push('creator 无效或超过 80 个字符。')
+  if (!payload?.handle || !/^[a-zA-Z0-9_.-]{1,40}$/.test(payload.handle))
+    errors.push('handle 无效。')
+  if (!allowedCategories.includes(payload?.category)) errors.push('category 无效。')
+  if (!isAllowedImage(payload?.image))
+    errors.push('image 必须是 GitHub user attachment HTTPS URL。')
+  if (!payload?.description || String(payload.description).length > 1200)
+    errors.push('description 无效。')
+  if (payload.sourceUrl) {
+    try {
+      if (new URL(payload.sourceUrl).protocol !== 'https:')
+        errors.push('sourceUrl 必须使用 HTTPS。')
+    } catch {
+      errors.push('sourceUrl 不是有效 URL。')
+    }
+  }
+  if (!allowedAiDisclosures.includes(payload?.aiDisclosure)) errors.push('aiDisclosure 无效。')
+  if (!allowedOrigins.includes(payload?.origin)) errors.push('origin 无效。')
+  for (const field of ['maintainers', 'coAuthors']) {
+    if (!Array.isArray(payload?.[field]) || payload[field].length > 12)
+      errors.push(`${field} 无效。`)
+  }
+  return errors
+}
+
 export function parseDiscussionBody(body) {
   const match = String(body || '').match(
     new RegExp(`<!--\\s*${DISCUSSION_MARKER}\\s*\\n([\\s\\S]*?)\\n\\s*-->`),
@@ -47,17 +108,22 @@ export function parseDiscussionBody(body) {
   if (!match) return { ok: false, error: '缺少 lty-moe 作品数据区块。' }
   try {
     const payload = JSON.parse(match[1])
-    if (payload.schemaVersion !== 1 || !payload.id || !payload.title) {
-      return { ok: false, error: '作品数据区块版本或必要字段无效。' }
-    }
+    const errors = validateDiscussionPayload(payload)
+    if (errors.length) return { ok: false, error: errors.join(' ') }
     return { ok: true, payload }
   } catch {
     return { ok: false, error: '作品数据区块不是有效 JSON。' }
   }
 }
 
-export function buildDiscussionBody(work) {
-  const payload = {
+export function buildDiscussionPayload(
+  work,
+  updatedAt = work.updatedAt || new Date().toISOString(),
+) {
+  const handle = String(work.handle || normalizeAuthorId('', work.creator))
+    .replace(/^@/, '')
+    .trim()
+  return {
     schemaVersion: 1,
     id: work.id,
     sourceIssue: work.sourceIssue,
@@ -65,8 +131,8 @@ export function buildDiscussionBody(work) {
     sourceUrl: work.sourceUrl || null,
     title: work.title,
     creator: work.creator,
-    handle: work.handle,
-    canonicalAuthorId: work.canonicalAuthorId || normalizeAuthorId(work.handle, work.creator),
+    handle,
+    canonicalAuthorId: work.canonicalAuthorId || normalizeAuthorId(handle, work.creator),
     category: work.category,
     image: work.image,
     description: work.description,
@@ -77,9 +143,19 @@ export function buildDiscussionBody(work) {
     aiDisclosure: work.aiDisclosure || '未披露',
     origin: work.origin || '未声明',
     submittedBy: work.submittedBy || '',
-    updatedAt: new Date().toISOString(),
+    updatedAt,
   }
+}
+
+export function buildDiscussionBody(work, updatedAt) {
+  const payload = buildDiscussionPayload(work, updatedAt)
   return `<!-- ${DISCUSSION_MARKER}\n${JSON.stringify(payload)}\n-->\n\n# ${work.title}\n\n${work.description}`
+}
+
+function comparablePayload(payload) {
+  const comparable = { ...payload }
+  delete comparable.updatedAt
+  return JSON.stringify(comparable)
 }
 
 export function discussionToSubmission(discussion, payload) {
@@ -190,6 +266,7 @@ export function createGraphqlClient(token, fetchImpl = globalThis.fetch) {
         'user-agent': 'lty-moe-discussions-sync',
       },
       body: JSON.stringify({ query, variables }),
+      signal: globalThis.AbortSignal.timeout(30_000),
     })
     if (!response.ok) throw new Error(`GitHub GraphQL HTTP ${response.status}`)
     const result = await response.json()
@@ -326,6 +403,21 @@ async function closeDiscussion(graphql, discussionId) {
   )
 }
 
+async function commentOnDiscussion(graphql, discussionId, body) {
+  return graphql(
+    `
+      mutation ($discussionId: ID!, $body: String!) {
+        addDiscussionComment(input: { discussionId: $discussionId, body: $body }) {
+          comment {
+            id
+          }
+        }
+      }
+    `,
+    { discussionId, body },
+  )
+}
+
 async function loadSubmissions() {
   return JSON.parse(await readFile(submissionsFile, 'utf8'))
 }
@@ -337,13 +429,19 @@ async function publishMissing(graphql, category, discussions, submissions) {
     if (parsed.ok) byId.set(parsed.payload.id, discussion)
   }
   for (const submission of submissions) {
+    const submissionPayload = buildDiscussionPayload(submission)
+    const errors = validateDiscussionPayload(submissionPayload)
+    if (errors.length) throw new Error(`投稿 ${submission.id} 无法发布：${errors.join(' ')}`)
     const existing = byId.get(submission.id)
     if (existing) {
+      const parsed = parseDiscussionBody(existing.body)
+      if (parsed.ok && comparablePayload(parsed.payload) === comparablePayload(submissionPayload))
+        continue
       await updateDiscussion(
         graphql,
         existing.id,
         `[作品] ${submission.title}`,
-        buildDiscussionBody(submission),
+        buildDiscussionBody(submission, parsed.ok ? parsed.payload.updatedAt : undefined),
       )
     } else {
       await createDiscussion(graphql, category.repositoryId, category.categoryId, submission)
@@ -368,21 +466,41 @@ async function normalizeDiscussions(graphql, discussions) {
       graphql,
       merged.canonical.discussion.id,
       `[作品] ${merged.payload.title}`,
-      buildDiscussionBody(merged.payload),
+      buildDiscussionBody(merged.payload, merged.canonical.payload.updatedAt),
     )
-    for (const duplicate of merged.duplicates)
+    for (const duplicate of merged.duplicates) {
+      await commentOnDiscussion(
+        graphql,
+        duplicate.discussion.id,
+        `已与 canonical 作品 Discussion ${merged.canonical.discussion.url} 合并；本条记录将被关闭。`,
+      )
       await closeDiscussion(graphql, duplicate.discussion.id)
+    }
   }
 }
 
-export async function syncDiscussions({ token, owner, name, fetchImpl = globalThis.fetch } = {}) {
+export async function syncDiscussions({
+  token,
+  owner,
+  name,
+  publishToDiscussions = false,
+  fetchImpl = globalThis.fetch,
+} = {}) {
   if (!token || !owner || !name) throw new Error('需要 token、owner 和 name。')
   const graphql = createGraphqlClient(token, fetchImpl)
   const category = await findCategory(graphql, owner, name)
   const submissions = await loadSubmissions()
   let discussions = await listDiscussions(graphql, owner, name)
-  await publishMissing(graphql, category, discussions, submissions)
+  if (publishToDiscussions) await publishMissing(graphql, category, discussions, submissions)
   discussions = await listDiscussions(graphql, owner, name)
+  const invalid = discussions
+    .map((discussion) => ({ discussion, parsed: parseDiscussionBody(discussion.body) }))
+    .filter((item) => !item.parsed.ok)
+    .map(({ discussion, parsed }) => ({
+      number: discussion.number,
+      url: discussion.url,
+      error: parsed.error,
+    }))
   await normalizeDiscussions(graphql, discussions)
   discussions = await listDiscussions(graphql, owner, name)
   const normalized = discussions
@@ -394,16 +512,31 @@ export async function syncDiscussions({ token, owner, name, fetchImpl = globalTh
     .sort((a, b) => a.id.localeCompare(b.id))
   await writeFile(submissionsFile, `${JSON.stringify(normalized, null, 2)}\n`)
   await writeFile(authorsFile, `${JSON.stringify(normalizeAuthors(normalized), null, 2)}\n`)
-  return { submissions: normalized.length, discussions: discussions.length }
+  const report = {
+    generatedAt: new Date().toISOString(),
+    invalid,
+    submissions: normalized.length,
+    discussions: discussions.length,
+  }
+  await writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`)
+  if (process.env.GITHUB_STEP_SUMMARY && invalid.length) {
+    await writeFile(
+      process.env.GITHUB_STEP_SUMMARY,
+      `## Discussions normalization\n\n发现 ${invalid.length} 条无效 Discussion 数据，详情见工作流报告。\n`,
+      { flag: 'a' },
+    )
+  }
+  return report
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [owner, name] = (process.env.GITHUB_REPOSITORY || '').split('/')
   try {
     const result = await syncDiscussions({
-      token: process.env.GITHUB_TOKEN || process.env.DISCUSSIONS_TOKEN,
+      token: process.env.DISCUSSIONS_TOKEN || process.env.GITHUB_TOKEN,
       owner,
       name,
+      publishToDiscussions: process.env.PUBLISH_DISCUSSIONS === 'true',
     })
     console.log(JSON.stringify(result))
   } catch (error) {

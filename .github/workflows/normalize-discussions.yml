@@ -1,30 +1,41 @@
 name: Normalize Discussions database
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
+    inputs:
+      migrate_existing:
+        description: 'Create Discussions for legacy JSON submissions that do not have one yet'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
-  contents: write
-  discussions: write
-  pull-requests: write
+  contents: read
 
 jobs:
   normalize:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      discussions: write
+      pull-requests: write
     concurrency:
       group: normalize-discussions
       cancel-in-progress: false
     steps:
       - name: Checkout main
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: main
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -34,13 +45,22 @@ jobs:
 
       - name: Sync Discussions and generate snapshots
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCUSSIONS_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          PUBLISH_DISCUSSIONS: ${{ github.event_name == 'push' || inputs.migrate_existing == true }}
         run: node scripts/discussions.mjs
+
+      - name: Upload normalization report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: discussions-normalization-report
+          path: ${{ runner.temp }}/discussion-normalization-report.json
+          if-no-files-found: ignore
 
       - name: Create or update snapshot PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           if git diff --quiet -- src/data/submissions.json src/data/authors.json; then
             echo 'No snapshot changes.'

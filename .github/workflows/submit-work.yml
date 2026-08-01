@@ -16,6 +16,7 @@ jobs:
       (contains(join(github.event.issue.labels.*.name, ','), 'submission:work') ||
       contains(join(github.event.issue.labels.*.name, ','), 'submission:update'))
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     concurrency:
       group: submission-${{ github.event.issue.number }}
       cancel-in-progress: false
@@ -29,13 +30,13 @@ jobs:
       SUBMISSION_MODE: ${{ contains(join(github.event.issue.labels.*.name, ','), 'submission:update') && 'update' || 'create' }}
     steps:
       - name: Checkout main
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: main
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -45,7 +46,7 @@ jobs:
 
       - name: Check for an existing open submission PR
         id: existing
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           SUBMISSION_MODE: ${{ env.SUBMISSION_MODE }}
@@ -66,7 +67,7 @@ jobs:
 
       - name: Comment on the existing PR
         if: steps.existing.outputs.exists == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           EXISTING_PR_URL: ${{ steps.existing.outputs.url }}
         with:
@@ -91,7 +92,7 @@ jobs:
 
       - name: Explain invalid submission
         if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'failure'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           RESULT_FILE: submission-result.json
           SUBMISSION_MODE: ${{ env.SUBMISSION_MODE }}
@@ -136,7 +137,7 @@ jobs:
 
       - name: Create submission PR
         if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           BRANCH: ${{ steps.existing.outputs.branch }}
           WORK_TITLE: ${{ steps.append.outputs.work_title }}

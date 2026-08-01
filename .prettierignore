@@ -4,3 +4,4 @@ node_modules
 .react-router
 playwright-report
 test-results
+.github/CODEOWNERS

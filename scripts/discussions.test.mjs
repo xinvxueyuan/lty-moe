@@ -7,6 +7,7 @@ import {
   normalizeAuthors,
   normalizeUrl,
   parseDiscussionBody,
+  validateDiscussionPayload,
 } from './discussions.mjs'
 
 const work = {
@@ -50,4 +51,12 @@ test('authors are grouped by canonical author id', () => {
   assert.equal(authors.length, 1)
   assert.deepEqual(authors[0].workIds, ['issue-1', 'issue-2'])
   assert.deepEqual(authors[0].aliases, ['Sora K.'])
+})
+
+test('rejects unsafe discussion payloads', () => {
+  const parsed = parseDiscussionBody(
+    '<!-- lty-moe:work:v1\n{"schemaVersion":1,"id":"issue-1","title":"unsafe"}\n-->',
+  )
+  assert.equal(parsed.ok, false)
+  assert.ok(validateDiscussionPayload({ schemaVersion: 1, id: 'issue-1' }).length > 0)
 })
