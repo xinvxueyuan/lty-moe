@@ -301,7 +301,7 @@ async function findCategory(graphql, owner, name) {
   return { repositoryId: data.repository.id, categoryId: category.id }
 }
 
-async function listDiscussions(graphql, owner, name) {
+async function listDiscussions(graphql, owner, name, includeClosed = false) {
   const result = []
   let cursor = null
   do {
@@ -337,7 +337,7 @@ async function listDiscussions(graphql, owner, name) {
     )
     result.push(
       ...data.repository.discussions.nodes.filter(
-        (item) => item.category?.name === DISCUSSION_CATEGORY && !item.closed,
+        (item) => item.category?.name === DISCUSSION_CATEGORY && (includeClosed || !item.closed),
       ),
     )
     cursor = data.repository.discussions.pageInfo.hasNextPage
@@ -420,6 +420,52 @@ async function commentOnDiscussion(graphql, discussionId, body) {
 
 async function loadSubmissions() {
   return JSON.parse(await readFile(submissionsFile, 'utf8'))
+}
+
+export async function publishSubmission({
+  token,
+  owner,
+  name,
+  workId,
+  fetchImpl = globalThis.fetch,
+} = {}) {
+  if (!token || !owner || !name || !workId)
+    throw new Error('发布 Discussion 需要 token、owner、name 和 workId。')
+  const graphql = createGraphqlClient(token, fetchImpl)
+  const category = await findCategory(graphql, owner, name)
+  const submissions = await loadSubmissions()
+  const submission = submissions.find((item) => item.id === workId)
+  if (!submission) throw new Error(`找不到已审核的作品「${workId}」。`)
+  const payload = buildDiscussionPayload(submission)
+  const errors = validateDiscussionPayload(payload)
+  if (errors.length) throw new Error(`作品 ${workId} 无法发布：${errors.join(' ')}`)
+  const discussions = await listDiscussions(graphql, owner, name, true)
+  const existing = discussions.find((discussion) => {
+    const parsed = parseDiscussionBody(discussion.body)
+    return parsed.ok && parsed.payload.id === workId
+  })
+  if (existing?.closed)
+    throw new Error(`作品 ${workId} 已存在一个关闭的 Discussion，请先人工处理。`)
+  if (existing) {
+    const parsed = parseDiscussionBody(existing.body)
+    if (parsed.ok && comparablePayload(parsed.payload) === comparablePayload(payload)) {
+      return { action: 'unchanged', discussion: existing.url }
+    }
+    await updateDiscussion(
+      graphql,
+      existing.id,
+      `[作品] ${submission.title}`,
+      buildDiscussionBody(submission, parsed.ok ? parsed.payload.updatedAt : undefined),
+    )
+    return { action: 'updated', discussion: existing.url }
+  }
+  const created = await createDiscussion(
+    graphql,
+    category.repositoryId,
+    category.categoryId,
+    submission,
+  )
+  return { action: 'created', discussion: created.createDiscussion.discussion.url }
 }
 
 async function publishMissing(graphql, category, discussions, submissions) {
@@ -545,12 +591,19 @@ export async function syncDiscussions({
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [owner, name] = (process.env.GITHUB_REPOSITORY || '').split('/')
   try {
-    const result = await syncDiscussions({
-      token: process.env.DISCUSSIONS_TOKEN || process.env.GITHUB_TOKEN,
-      owner,
-      name,
-      publishToDiscussions: process.env.PUBLISH_DISCUSSIONS === 'true',
-    })
+    const result = process.env.WORK_ID
+      ? await publishSubmission({
+          token: process.env.DISCUSSIONS_TOKEN || process.env.GITHUB_TOKEN,
+          owner,
+          name,
+          workId: process.env.WORK_ID,
+        })
+      : await syncDiscussions({
+          token: process.env.DISCUSSIONS_TOKEN || process.env.GITHUB_TOKEN,
+          owner,
+          name,
+          publishToDiscussions: process.env.PUBLISH_DISCUSSIONS === 'true',
+        })
     console.log(JSON.stringify(result))
   } catch (error) {
     console.error(error instanceof Error ? error.message : error)

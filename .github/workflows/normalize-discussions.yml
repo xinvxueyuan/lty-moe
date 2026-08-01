@@ -1,8 +1,6 @@
 name: Normalize Discussions database
 
 on:
-  push:
-    branches: [main]
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
@@ -47,7 +45,7 @@ jobs:
         env:
           DISCUSSIONS_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          PUBLISH_DISCUSSIONS: ${{ github.event_name == 'push' || inputs.migrate_existing == true }}
+          PUBLISH_DISCUSSIONS: ${{ inputs.migrate_existing == true }}
         run: node scripts/discussions.mjs
 
       - name: Upload normalization report

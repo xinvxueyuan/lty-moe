@@ -148,6 +148,7 @@ jobs:
               process.env.SUBMISSION_MODE === 'update' ? '## 更新洛天依档案条目' : '## 洛天依同人作品投稿',
               '',
               `- 作品标题：${process.env.WORK_TITLE}`,
+              `- Submission ID: ${process.env.WORK_TITLE}`,
               `- 原 Issue：#${context.issue.number}`,
               `- 投稿人：@${context.payload.issue.user.login}`,
               '',

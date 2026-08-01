@@ -76,9 +76,18 @@ jobs:
               if (markerIndex < 0) continue
               const issueNumber = Number(pr.body.slice(markerIndex + marker.length).split(' ')[0].trim())
               if (!Number.isInteger(issueNumber)) continue
+              const workMatch = pr.body.match(/Submission ID:\s*([a-zA-Z0-9_.-]{1,80})/)
+              const workId = workMatch?.[1] || `issue-${issueNumber}`
               const pageUrl = String(process.env.PAGE_URL || '')
               const baseUrl = pageUrl.endsWith('/') ? pageUrl : pageUrl + '/'
-              const workUrl = baseUrl + 'works/issue-' + issueNumber
+              const workUrl = baseUrl + 'works/' + workId
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                per_page: 100,
+              })
+              if (comments.some((comment) => comment.body?.includes(`作品已发布到天依档案：${workUrl}`))) continue
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
