@@ -4,8 +4,9 @@ import afterTheRainImage from '../assets/images/lty-after-the-rain.png'
 import blueHourImage from '../assets/images/lty-blue-hour.png'
 import smallRitualsImage from '../assets/images/lty-small-rituals.png'
 import lastSunImage from '../assets/images/lty-last-sun.png'
+import type { Work } from './types'
 
-export const seedWorks = [
+export const seedWorks: Work[] = [
   {
     id: 'lunar-garden',
     title: '给天依的月面花园',
@@ -18,6 +19,11 @@ export const seedWorks = [
     palette: ['#E6CFB6', '#A4B6A8', '#45505A'],
     description: '给那些在凌晨四点还没有睡着的人，也给那个用歌声把月光带来的人。',
     date: '2024.06.18',
+    license: 'CC BY-NC 4.0',
+    maintainers: ['天依档案编辑组'],
+    coAuthors: [],
+    aiDisclosure: '未使用生成式 AI',
+    origin: '原创',
   },
   {
     id: 'soft-machines',
@@ -29,8 +35,14 @@ export const seedWorks = [
     likes: '1.9k',
     comments: 46,
     palette: ['#D1B6F0', '#F4C4B2', '#323344'],
-    description: 'A study of tender interfaces, tactile forms, and the quiet optimism of future tools.',
+    description:
+      'A study of tender interfaces, tactile forms, and the quiet optimism of future tools.',
     date: '2024.06.15',
+    license: 'All rights reserved',
+    maintainers: ['天依档案编辑组'],
+    coAuthors: [],
+    aiDisclosure: '未使用生成式 AI',
+    origin: '原创',
   },
   {
     id: 'after-the-rain',
@@ -44,6 +56,11 @@ export const seedWorks = [
     palette: ['#4E7770', '#D6C7A4', '#1F2A2D'],
     description: 'The city after weather. A small collection of green, glass, and borrowed light.',
     date: '2024.06.11',
+    license: 'CC BY 4.0',
+    maintainers: ['天依档案编辑组'],
+    coAuthors: [],
+    aiDisclosure: '未使用生成式 AI',
+    origin: '原创',
   },
   {
     id: 'blue-hour',
@@ -57,6 +74,11 @@ export const seedWorks = [
     palette: ['#293E83', '#E9B2A8', '#181C34'],
     description: '天依蓝的每一次显影，都是一间只能走进去一次的房间。',
     date: '2024.06.04',
+    license: 'All rights reserved',
+    maintainers: ['天依档案编辑组'],
+    coAuthors: [],
+    aiDisclosure: '未使用生成式 AI',
+    origin: '原创',
   },
   {
     id: 'small-rituals',
@@ -70,6 +92,11 @@ export const seedWorks = [
     palette: ['#D99176', '#F4E3CF', '#3F2925'],
     description: 'Tea, a matchbook, two plants. Things that make a day feel held together.',
     date: '2024.05.30',
+    license: 'CC BY-NC 4.0',
+    maintainers: ['天依档案编辑组'],
+    coAuthors: [],
+    aiDisclosure: '未使用生成式 AI',
+    origin: '原创',
   },
   {
     id: 'the-last-sun',
@@ -83,5 +110,10 @@ export const seedWorks = [
     palette: ['#EE9D63', '#6E3151', '#201B2D'],
     description: '来自一支关于“我们留下的温度”的同人短片定格。',
     date: '2024.05.26',
+    license: 'CC BY-NC-SA 4.0',
+    maintainers: ['天依档案编辑组'],
+    coAuthors: [],
+    aiDisclosure: '未使用生成式 AI',
+    origin: '原创',
   },
 ]

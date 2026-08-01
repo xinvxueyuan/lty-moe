@@ -13,7 +13,8 @@ jobs:
   submit:
     if: >-
       github.event.issue.state == 'open' &&
-      contains(join(github.event.issue.labels.*.name, ','), 'submission:work')
+      (contains(join(github.event.issue.labels.*.name, ','), 'submission:work') ||
+      contains(join(github.event.issue.labels.*.name, ','), 'submission:update'))
     runs-on: ubuntu-latest
     concurrency:
       group: submission-${{ github.event.issue.number }}
@@ -25,6 +26,7 @@ jobs:
       SUBMITTED_BY: ${{ github.event.issue.user.login }}
       GITHUB_REPOSITORY: ${{ github.repository }}
       RESULT_FILE: submission-result.json
+      SUBMISSION_MODE: ${{ contains(join(github.event.issue.labels.*.name, ','), 'submission:update') && 'update' || 'create' }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v6
@@ -46,9 +48,11 @@ jobs:
         uses: actions/github-script@v9
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          SUBMISSION_MODE: ${{ env.SUBMISSION_MODE }}
         with:
           script: |
-            const branch = `submission/issue-${process.env.ISSUE_NUMBER}`
+            const prefix = process.env.SUBMISSION_MODE === 'update' ? 'submission/update-issue' : 'submission/issue'
+            const branch = `${prefix}-${process.env.ISSUE_NUMBER}`
             const { data } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -58,6 +62,7 @@ jobs:
             })
             core.setOutput('exists', data.length ? 'true' : 'false')
             core.setOutput('url', data[0]?.html_url || '')
+            core.setOutput('branch', branch)
 
       - name: Comment on the existing PR
         if: steps.existing.outputs.exists == 'true'
@@ -77,13 +82,19 @@ jobs:
         id: append
         if: steps.existing.outputs.exists != 'true'
         continue-on-error: true
-        run: node scripts/append-submission.mjs
+        run: |
+          if [ "$SUBMISSION_MODE" = "update" ]; then
+            node scripts/update-submission.mjs
+          else
+            node scripts/append-submission.mjs
+          fi
 
       - name: Explain invalid submission
         if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'failure'
         uses: actions/github-script@v9
         env:
           RESULT_FILE: submission-result.json
+          SUBMISSION_MODE: ${{ env.SUBMISSION_MODE }}
         with:
           script: |
             const fs = require('node:fs')
@@ -99,7 +110,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `这个投稿暂时还不能生成 PR，请补充或修正以下内容：\n\n${errors}`,
+              body: `${process.env.SUBMISSION_MODE === 'update' ? '这个更新暂时还不能生成 PR' : '这个投稿暂时还不能生成 PR'}，请补充或修正以下内容：\n\n${errors}`,
             })
 
       - name: Build submission branch
@@ -109,26 +120,31 @@ jobs:
       - name: Push submission branch
         if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'
         env:
-          BRANCH: submission/issue-${{ github.event.issue.number }}
+          BRANCH: ${{ steps.existing.outputs.branch }}
           WORK_TITLE: ${{ steps.append.outputs.work_title }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$BRANCH"
           git add src/data/submissions.json
-          git commit -m "feat(submission): add $WORK_TITLE from issue #${ISSUE_NUMBER}"
+          if [ "$SUBMISSION_MODE" = "update" ]; then
+            git commit -m "fix(submission): update $WORK_TITLE from issue #${ISSUE_NUMBER}"
+          else
+            git commit -m "feat(submission): add $WORK_TITLE from issue #${ISSUE_NUMBER}"
+          fi
           git push --set-upstream origin "$BRANCH"
 
       - name: Create submission PR
         if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'
         uses: actions/github-script@v9
         env:
-          BRANCH: submission/issue-${{ github.event.issue.number }}
+          BRANCH: ${{ steps.existing.outputs.branch }}
           WORK_TITLE: ${{ steps.append.outputs.work_title }}
+          SUBMISSION_MODE: ${{ env.SUBMISSION_MODE }}
         with:
           script: |
             const body = [
-              '## 洛天依同人作品投稿',
+              process.env.SUBMISSION_MODE === 'update' ? '## 更新洛天依档案条目' : '## 洛天依同人作品投稿',
               '',
               `- 作品标题：${process.env.WORK_TITLE}`,
               `- 原 Issue：#${context.issue.number}`,
@@ -136,14 +152,18 @@ jobs:
               '',
               `Related to #${context.issue.number}`,
               '',
-              '这是由 Issue 投稿 Action 自动生成的 PR。请先确认内容与版权声明，再合并。',
+              process.env.SUBMISSION_MODE === 'update'
+                ? '这是由 Issue 更新 Action 自动生成的 PR。请确认变更内容与版权声明，再合并。'
+                : '这是由 Issue 投稿 Action 自动生成的 PR。请先确认内容与版权声明，再合并。',
             ].join('\n')
             const { data: pr } = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               head: process.env.BRANCH,
               base: 'main',
-              title: `feat(submission): add ${process.env.WORK_TITLE} from issue #${context.issue.number}`,
+              title: process.env.SUBMISSION_MODE === 'update'
+                ? `fix(submission): update ${process.env.WORK_TITLE} from issue #${context.issue.number}`
+                : `feat(submission): add ${process.env.WORK_TITLE} from issue #${context.issue.number}`,
               body,
               maintainer_can_modify: true,
             })

@@ -1,6 +1,6 @@
 name: 洛天依同人作品投稿
 description: 把你的曲绘、插画、PV 或 3D 作品送进天依档案。
-title: "[投稿] "
+title: '[投稿] '
 labels:
   - submission:work
   - awaiting-review
@@ -71,6 +71,60 @@ body:
       label: 原作链接 / Source link
       description: 可选。填写作品原帖、视频或个人主页的 HTTPS 链接。
       placeholder: https://...
+
+  - type: dropdown
+    id: license
+    attributes:
+      label: 许可证 / License
+      description: 请选择别人可以如何使用这件作品。
+      options:
+        - All rights reserved / 保留所有权利
+        - CC BY 4.0
+        - CC BY-NC 4.0
+        - CC BY-NC-SA 4.0
+        - 其他（请在作品简介中说明）
+    validations:
+      required: true
+
+  - type: textarea
+    id: maintainers
+    attributes:
+      label: 维护者 / Maintainers
+      description: 可选。一行填写一位负责维护此条目的人员或组织。
+      placeholder: |-
+        @creator
+        @archive-editor
+
+  - type: textarea
+    id: co_authors
+    attributes:
+      label: 共同作者 / Co-authors
+      description: 可选。一行填写一位共同作者；没有共同作者可以留空。
+      placeholder: |-
+        @co-author
+
+  - type: dropdown
+    id: ai_disclosure
+    attributes:
+      label: AI 使用声明 / AI disclosure
+      description: 请如实说明生成式 AI 是否参与了这件作品。
+      options:
+        - 未使用生成式 AI
+        - 使用 AI 辅助创作
+        - 主要由 AI 生成
+    validations:
+      required: true
+
+  - type: dropdown
+    id: origin
+    attributes:
+      label: 作品来源 / Origin
+      description: 请区分这是你/团队原创的作品，还是经过授权转载的作品。
+      options:
+        - 原创
+        - 转载
+    validations:
+      required: true
 
   - type: checkboxes
     id: copyright

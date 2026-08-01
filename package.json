@@ -1,19 +1,51 @@
 {
-  "name": "moire-portfolio",
+  "name": "lty-moe",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && node scripts/prepare-pages.mjs",
-    "preview": "vite preview",
-    "test:submission": "node --test scripts/*.test.mjs"
+    "dev": "react-router dev",
+    "build": "react-router build && node scripts/prepare-pages.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "react-router typegen && tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:submission": "node --test scripts/*.test.mjs",
+    "test:e2e": "playwright test",
+    "playwright:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-router": "^8.3.0",
-    "vite": "latest"
+    "tailwind-merge": "^2.6.0",
+    "isbot": "^5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@react-router/dev": "^8.3.0",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.4",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.3",
+    "vite": "^8.2.0"
   }
 }
