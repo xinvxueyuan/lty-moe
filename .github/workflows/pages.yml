@@ -77,12 +77,13 @@ jobs:
               const match = pr.body.match(/Related to #(\d+)/)
               if (!match) continue
               const issueNumber = Number(match[1])
-              const workUrl = `${process.env.PAGE_URL.replace(/\/?$/, '/') }works/issue-${issueNumber}`
+              const baseUrl = String(process.env.PAGE_URL || '').replace(/\/?$/, '/')
+              const workUrl = baseUrl + 'works/issue-' + issueNumber
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: `作品已发布到天依档案：${workUrl}`,
+                body: '作品已发布到天依档案：' + workUrl,
               })
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
@@ -90,12 +91,16 @@ jobs:
                 issue_number: issueNumber,
                 labels: ['published'],
               })
-              await github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                name: 'awaiting-review',
-              }).catch(() => {})
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  name: 'awaiting-review',
+                })
+              } catch (error) {
+                if (error.status !== 404) throw error
+              }
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
