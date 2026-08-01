@@ -1,4 +1,9 @@
-const image = (filename) => `${import.meta.env.BASE_URL}images/${filename}`
+import lunarGardenImage from '../assets/images/lty-lunar-garden.png'
+import softMachinesImage from '../assets/images/lty-soft-machines.png'
+import afterTheRainImage from '../assets/images/lty-after-the-rain.png'
+import blueHourImage from '../assets/images/lty-blue-hour.png'
+import smallRitualsImage from '../assets/images/lty-small-rituals.png'
+import lastSunImage from '../assets/images/lty-last-sun.png'
 
 export const seedWorks = [
   {
@@ -7,7 +12,7 @@ export const seedWorks = [
     creator: 'Yukiko Arai',
     handle: 'yukiko_rai',
     category: '插画',
-    image: image('lty-lunar-garden.png'),
+    image: lunarGardenImage,
     likes: '2.8k',
     comments: 83,
     palette: ['#E6CFB6', '#A4B6A8', '#45505A'],
@@ -20,7 +25,7 @@ export const seedWorks = [
     creator: 'Mia Park',
     handle: 'miapark',
     category: '概念设计',
-    image: image('lty-soft-machines.png'),
+    image: softMachinesImage,
     likes: '1.9k',
     comments: 46,
     palette: ['#D1B6F0', '#F4C4B2', '#323344'],
@@ -33,7 +38,7 @@ export const seedWorks = [
     creator: 'Nico Moretti',
     handle: 'nico.m',
     category: '摄影',
-    image: image('lty-after-the-rain.png'),
+    image: afterTheRainImage,
     likes: '1.6k',
     comments: 29,
     palette: ['#4E7770', '#D6C7A4', '#1F2A2D'],
@@ -46,7 +51,7 @@ export const seedWorks = [
     creator: 'Sora Kim',
     handle: 'sora-kim',
     category: '绘画',
-    image: image('lty-blue-hour.png'),
+    image: blueHourImage,
     likes: '4.1k',
     comments: 112,
     palette: ['#293E83', '#E9B2A8', '#181C34'],
@@ -59,7 +64,7 @@ export const seedWorks = [
     creator: 'Iris Matsu',
     handle: 'irismatsu',
     category: '插画',
-    image: image('lty-small-rituals.png'),
+    image: smallRitualsImage,
     likes: '937',
     comments: 18,
     palette: ['#D99176', '#F4E3CF', '#3F2925'],
@@ -72,7 +77,7 @@ export const seedWorks = [
     creator: 'Juno Vale',
     handle: 'junovale',
     category: '3D / 动画',
-    image: image('lty-last-sun.png'),
+    image: lastSunImage,
     likes: '3.3k',
     comments: 76,
     palette: ['#EE9D63', '#6E3151', '#201B2D'],
