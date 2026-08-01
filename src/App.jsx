@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate, useParams } from 'react-router'
 import submissions from './data/submissions.json'
 import { seedWorks } from './data/works'
 
