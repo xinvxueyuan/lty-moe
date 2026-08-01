@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -34,7 +34,7 @@ jobs:
 
       - name: Setup GitHub Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Build site
         env:
@@ -42,7 +42,7 @@ jobs:
         run: npm run build
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: build/client
 
@@ -55,10 +55,10 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
 
       - name: Publish submission issues
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         with:
@@ -76,9 +76,18 @@ jobs:
               if (markerIndex < 0) continue
               const issueNumber = Number(pr.body.slice(markerIndex + marker.length).split(' ')[0].trim())
               if (!Number.isInteger(issueNumber)) continue
+              const workMatch = pr.body.match(/Submission ID:\s*([a-zA-Z0-9_.-]{1,80})/)
+              const workId = workMatch?.[1] || `issue-${issueNumber}`
               const pageUrl = String(process.env.PAGE_URL || '')
               const baseUrl = pageUrl.endsWith('/') ? pageUrl : pageUrl + '/'
-              const workUrl = baseUrl + 'works/issue-' + issueNumber
+              const workUrl = baseUrl + 'works/' + workId
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                per_page: 100,
+              })
+              if (comments.some((comment) => comment.body?.includes(`作品已发布到天依档案：${workUrl}`))) continue
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,

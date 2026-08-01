@@ -1,0 +1,5 @@
+# Security-sensitive paths require repository-owner review.
+/.github/ @xinvxueyuan
+/scripts/ @xinvxueyuan
+/src/data/ @xinvxueyuan
+/SECURITY.md @xinvxueyuan
