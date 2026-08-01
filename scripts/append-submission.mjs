@@ -1,7 +1,8 @@
 import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import { parseIssueBody } from './parse-submission.mjs'
 
-const resultFile = process.env.RESULT_FILE || `${process.env.RUNNER_TEMP || '.'}/submission-result.json`
+const resultFile =
+  process.env.RESULT_FILE || `${process.env.RUNNER_TEMP || '.'}/submission-result.json`
 const dataFile = 'src/data/submissions.json'
 const result = parseIssueBody(process.env.ISSUE_BODY || '', {
   issueNumber: process.env.ISSUE_NUMBER || '0',
@@ -11,7 +12,9 @@ const result = parseIssueBody(process.env.ISSUE_BODY || '', {
 
 if (result.ok) {
   const submissions = JSON.parse(await readFile(dataFile, 'utf8'))
-  const existing = submissions.find((submission) => submission.sourceIssue === result.submission.sourceIssue)
+  const existing = submissions.find(
+    (submission) => submission.sourceIssue === result.submission.sourceIssue,
+  )
   if (existing) {
     const duplicate = { ok: true, changed: false, duplicate: true, submission: existing }
     await writeFile(resultFile, JSON.stringify(duplicate, null, 2))
