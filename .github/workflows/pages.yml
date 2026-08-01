@@ -77,7 +77,8 @@ jobs:
               const match = pr.body.match(/Related to #(\d+)/)
               if (!match) continue
               const issueNumber = Number(match[1])
-              const baseUrl = String(process.env.PAGE_URL || '').replace(/\/?$/, '/')
+              const pageUrl = String(process.env.PAGE_URL || '')
+              const baseUrl = pageUrl.endsWith('/') ? pageUrl : pageUrl + '/'
               const workUrl = baseUrl + 'works/issue-' + issueNumber
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
