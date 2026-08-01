@@ -35,15 +35,6 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Check for an existing open submission PR
         id: existing
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -113,10 +104,6 @@ jobs:
               issue_number: context.issue.number,
               body: `${process.env.SUBMISSION_MODE === 'update' ? '这个更新暂时还不能生成 PR' : '这个投稿暂时还不能生成 PR'}，请补充或修正以下内容：\n\n${errors}`,
             })
-
-      - name: Build submission branch
-        if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'
-        run: npm run build
 
       - name: Push submission branch
         if: steps.existing.outputs.exists != 'true' && steps.append.outcome == 'success' && steps.append.outputs.changed == 'true'

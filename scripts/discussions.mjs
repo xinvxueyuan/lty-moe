@@ -323,6 +323,9 @@ async function listDiscussions(graphql, owner, name, includeClosed = false) {
                 }
                 comments {
                   totalCount
+                  nodes {
+                    body
+                  }
                 }
               }
               pageInfo {
@@ -515,11 +518,17 @@ async function normalizeDiscussions(graphql, discussions) {
       buildDiscussionBody(merged.payload, merged.canonical.payload.updatedAt),
     )
     for (const duplicate of merged.duplicates) {
-      await commentOnDiscussion(
-        graphql,
-        duplicate.discussion.id,
-        `已与 canonical 作品 Discussion ${merged.canonical.discussion.url} 合并；本条记录将被关闭。`,
+      const marker = `lty-moe:merged:${duplicate.discussion.number}->${merged.canonical.discussion.number}`
+      const hasAuditComment = duplicate.discussion.comments?.nodes?.some((comment) =>
+        comment.body?.includes(marker),
       )
+      if (!hasAuditComment) {
+        await commentOnDiscussion(
+          graphql,
+          duplicate.discussion.id,
+          `${marker}\n已与 canonical 作品 Discussion ${merged.canonical.discussion.url} 合并；本条记录将被关闭。`,
+        )
+      }
       await closeDiscussion(graphql, duplicate.discussion.id)
     }
   }
