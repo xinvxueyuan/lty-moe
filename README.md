@@ -11,6 +11,14 @@
 5. PR 通过构建检查并获得维护者批准后合并。
 6. 合并后自动删除投稿分支，并由 GitHub Pages 发布最新站点。
 
+## Discussions 数据库
+
+投稿作品的权威记录存储在 GitHub Discussions 的「作品档案」分类中，每个作品对应一个 Discussion。请在仓库 Settings 中启用 Discussions，并创建名为「作品档案」的分类；归一化 Action 会拒绝写入不存在的分类。
+
+每日 `Normalize Discussions database` Action 会读取 Discussions，按照来源 Issue、规范化原作链接，或规范化作者 ID 加精确标题合并高置信度重复项，并生成 `src/data/submissions.json` 与 `src/data/authors.json` 快照。快照只由 Action 生成，不应手工编辑；无法通过强键确认的相似条目会保留给维护者处理。
+
+首次启用时可从现有投稿快照运行一次 `workflow_dispatch` 完成迁移。Action 使用 `GITHUB_TOKEN` 的 `contents: write`、`discussions: write` 和 `pull-requests: write` 权限；若仓库策略禁止该 Token 修改 Discussions，需要改用具有相同仓库权限的 `DISCUSSIONS_TOKEN` Secret。
+
 如果需要修改已经发布的 Issue 投稿，请选择「更新天依档案条目」，填写作品详情页中的 `issue-*` 作品 ID。更新会生成独立 PR，种子作品不接受通过 Issue 直接修改。
 
 Pages 的实际地址由 GitHub Pages deployment output 动态返回，工作流不会硬编码域名。

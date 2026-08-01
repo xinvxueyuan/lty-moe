@@ -35,6 +35,10 @@ export type Work = {
   coAuthors: string[]
   aiDisclosure: AiDisclosure
   origin: WorkOrigin
+  canonicalAuthorId?: string
+  discussionNumber?: number
+  discussionId?: string
+  discussionUrl?: string
 }
 
 export type Submission = Work & {
@@ -42,6 +46,14 @@ export type Submission = Work & {
   sourceIssueUrl: string
   sourceUrl: string | null
   submittedBy: string
+}
+
+export type Author = {
+  id: string
+  displayName: string
+  handles: string[]
+  aliases: string[]
+  workIds: string[]
 }
 
 export type Creator = {
