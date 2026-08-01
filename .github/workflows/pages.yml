@@ -66,17 +66,19 @@ jobs:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         with:
           script: |
-            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            const response = await github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
               per_page: 20,
             })
-            const publishedPrs = prs.filter((pr) => pr.merged_at && pr.body)
-            for (const pr of publishedPrs) {
-              const match = pr.body.match(/Related to #(\d+)/)
-              if (!match) continue
-              const issueNumber = Number(match[1])
+            for (const pr of response.data) {
+              if (!pr.merged_at || !pr.body) continue
+              const marker = 'Related to #'
+              const markerIndex = pr.body.indexOf(marker)
+              if (markerIndex < 0) continue
+              const issueNumber = Number(pr.body.slice(markerIndex + marker.length).split(' ')[0].trim())
+              if (!Number.isInteger(issueNumber)) continue
               const pageUrl = String(process.env.PAGE_URL || '')
               const baseUrl = pageUrl.endsWith('/') ? pageUrl : pageUrl + '/'
               const workUrl = baseUrl + 'works/issue-' + issueNumber
@@ -92,15 +94,18 @@ jobs:
                 issue_number: issueNumber,
                 labels: ['published'],
               })
-              try {
+              const issueLabels = await github.rest.issues.listLabelsOnIssue({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+              })
+              if (issueLabels.data.some((label) => label.name === 'awaiting-review')) {
                 await github.rest.issues.removeLabel({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issueNumber,
                   name: 'awaiting-review',
                 })
-              } catch (error) {
-                if (error.status !== 404) throw error
               }
               await github.rest.issues.update({
                 owner: context.repo.owner,
