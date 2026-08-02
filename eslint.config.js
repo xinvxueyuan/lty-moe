@@ -1,5 +1,5 @@
 import eslint from '@eslint/js'
-import importPlugin from 'eslint-plugin-import'
+import importXPlugin from 'eslint-plugin-import-x'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
@@ -20,18 +20,18 @@ export default tseslint.config(
   {
     files: ['**/*.{ts,tsx}'],
     plugins: {
-      import: importPlugin,
+      'import-x': importXPlugin,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
     },
     settings: {
-      'import/resolver': {
+      'import-x/resolver': {
         typescript: true,
       },
     },
     rules: {
       ...reactHooks.configs['recommended-latest'].rules,
-      'import/no-unresolved': 'error',
+      'import-x/no-unresolved': 'error',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
     },
