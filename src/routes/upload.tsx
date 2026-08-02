@@ -39,7 +39,7 @@ export default function Upload() {
           <a
             className="submission-button inline-flex h-12 w-full items-center justify-center gap-2 bg-[var(--pink)] px-5 text-sm font-medium text-[var(--ink)] hover:bg-[#ff9cc2]"
             href={issueUrl}
-            rel="noreferrer"
+            rel="noopener noreferrer"
             target="_blank"
           >
             <SiGithub size={17} /> 打开 GitHub 投稿表单 <ArrowUpRight size={16} />
