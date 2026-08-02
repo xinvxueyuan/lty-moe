@@ -1,4 +1,5 @@
-import { ArrowUpRight, Github, ImagePlus, Info } from 'lucide-react'
+import { SiGithub } from '@icons-pack/react-simple-icons'
+import { ArrowUpRight, ImagePlus, Info } from 'lucide-react'
 import { Link } from 'react-router'
 
 const issueUrl = 'https://github.com/xinvxueyuan/lty-moe/issues/new?template=submit-work.yml'
@@ -41,7 +42,7 @@ export default function Upload() {
             rel="noreferrer"
             target="_blank"
           >
-            <Github size={17} /> 打开 GitHub 投稿表单 <ArrowUpRight size={16} />
+            <SiGithub size={17} /> 打开 GitHub 投稿表单 <ArrowUpRight size={16} />
           </a>
           <small className="submission-footnote">会在新标签页打开 GitHub Issue Form</small>
         </div>
