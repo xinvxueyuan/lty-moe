@@ -9,6 +9,7 @@ test('home loads the archive and main navigation', async ({ page }) => {
 
 test('explore searches and filters works', async ({ page }) => {
   await page.goto('/explore')
+  await expect(page.getByRole('link', { name: /Blue Hour Studies/ })).toBeVisible()
   const search = page.getByRole('textbox', { name: '搜索作品' })
   await search.fill('Sora')
   await expect(page.getByText('1 件作品')).toBeVisible()
@@ -33,6 +34,7 @@ test('work and creator detail routes render', async ({ page }) => {
 
 test('all visible artwork images load with valid dimensions', async ({ page }) => {
   await page.goto('/explore')
+  await expect(page.getByRole('link', { name: /Blue Hour Studies/ })).toBeVisible()
   const images = page.locator('img')
   await expect(images).not.toHaveCount(0)
   const dimensions = await images.evaluateAll((items) =>

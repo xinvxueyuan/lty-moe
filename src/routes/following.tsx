@@ -1,12 +1,17 @@
 import { Bell, Heart, ArrowUpRight } from 'lucide-react'
 import { Link, useLoaderData, useNavigate } from 'react-router'
 import { WorkGrid } from '../components/catalog'
+import { RouteFallback } from '../components/route-fallback'
 import type { Work } from '../data/types'
-import { listWorks } from '../db/client.server'
 import { Button } from '../components/ui/button'
+import { fetchWorks } from '../lib/api'
 
-export async function loader() {
-  return { works: await listWorks() }
+export async function clientLoader() {
+  return { works: await fetchWorks() }
+}
+
+export function HydrateFallback() {
+  return <RouteFallback eyebrow="YOUR SIGNAL / LOADING" title="同步关注更新…" />
 }
 
 export default function Following() {
