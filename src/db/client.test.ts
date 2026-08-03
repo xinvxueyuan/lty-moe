@@ -50,8 +50,20 @@ test('seeds demo works when the database is empty', async () => {
   assert.ok(blueHour)
   assert.equal(blueHour.title, '天依蓝 / Blue Hour Studies')
   assert.equal(blueHour.creator, 'Sora Kim')
+  assert.equal(blueHour.category, '绘画')
   assert.ok(Array.isArray(blueHour.palette))
   assert.ok(blueHour.palette.length >= 1)
+  assert.ok(blueHour.tags?.includes('天依蓝'))
+})
+
+test('listWorks filters by category and tag', async () => {
+  const byCategory = await listWorks({ category: '插画' })
+  assert.ok(byCategory.length >= 1)
+  assert.ok(byCategory.every((work) => work.category === '插画'))
+
+  const byTag = await listWorks({ tag: '洛天依' })
+  assert.ok(byTag.length >= 1)
+  assert.ok(byTag.every((work) => work.tags?.includes('洛天依')))
 })
 
 test('getWorkById returns a seeded work and null for missing ids', async () => {

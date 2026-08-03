@@ -100,6 +100,15 @@ export default function WorkDetail() {
             <ArrowRight size={16} />
           </Link>
           <p className="detail-description">{work.description}</p>
+          {work.tags?.length ? (
+            <div aria-label="作品标签" className="detail-tags">
+              {work.tags.map((tag) => (
+                <span className="tag-chip" key={tag}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className="palette-row">
             <span>COLOR NOTES</span>
             <div>

@@ -4,7 +4,8 @@ import {
   allowedLicenses,
   allowedOrigins,
 } from '../data/types'
-import type { Work, WorkCategory } from '../data/types'
+import { maxTagLength, maxTagsPerWork, parseTagNames, type WorkCategory } from '../data/taxonomy'
+import type { Work } from '../data/types'
 
 export type WorkFormInput = {
   title: string
@@ -19,6 +20,7 @@ export type WorkFormInput = {
   aiDisclosure: string
   origin: string
   copyright: string
+  tags?: string
 }
 
 export function slugFromText(text: string, max = 40): string {
@@ -61,6 +63,12 @@ export function validateWorkForm(input: WorkFormInput): {
   const license = input.license.trim()
   const aiDisclosure = input.aiDisclosure.trim()
   const origin = input.origin.trim()
+  const rawTags = input.tags ?? ''
+  const tags = parseTagNames(rawTags)
+  const oversizedTag = rawTags
+    .split(/\r?\n|,/)
+    .map((item) => item.replace(/^[-*#]\s*/, '').trim())
+    .find((item) => item.length > maxTagLength)
 
   if (!title || title.length > 120) errors.push('作品标题不能为空且不能超过 120 个字符。')
   if (!creator || creator.length > 80) errors.push('创作者名称不能为空且不能超过 80 个字符。')
@@ -78,6 +86,17 @@ export function validateWorkForm(input: WorkFormInput): {
   if (!allowedOrigins.includes(origin))
     errors.push(`作品来源必须是：${allowedOrigins.join('、')}。`)
   if (!input.copyright || input.copyright !== 'on') errors.push('请勾选版权确认。')
+  if (oversizedTag) errors.push(`单个标签不能超过 ${maxTagLength} 个字符。`)
+  if (parseTagNames(rawTags).length === 0 && rawTags.trim()) {
+    // all parts invalid already covered; keep silent
+  }
+  const rawParts = rawTags
+    .split(/\r?\n|,/)
+    .map((item) => item.replace(/^[-*#]\s*/, '').trim())
+    .filter(Boolean)
+  if (rawParts.length > maxTagsPerWork) {
+    errors.push(`标签最多 ${maxTagsPerWork} 个。`)
+  }
 
   if (errors.length) return { errors }
 
@@ -99,6 +118,7 @@ export function validateWorkForm(input: WorkFormInput): {
       comments: 0,
       palette: ['#73d9e0', '#ff70aa', '#182124'],
       date: new Date().toISOString().slice(0, 10).replaceAll('-', '.'),
+      tags,
     },
   }
 }

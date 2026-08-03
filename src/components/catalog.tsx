@@ -1,20 +1,12 @@
 import { Bookmark, Heart, ArrowUpRight, SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import type { FilterCategory, Work } from '../data/types'
+import { filterCategories, type FilterCategory } from '../data/taxonomy'
+import type { Work } from '../data/types'
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
 
-export const filterCategories: FilterCategory[] = [
-  '全部',
-  '插画',
-  '曲绘',
-  '摄影',
-  '绘画',
-  '概念设计',
-  'PV / 动画',
-  '3D / 动画',
-]
+export { filterCategories }
 
 export function CategoryFilters({
   value,
@@ -41,12 +33,18 @@ export function CategoryFilters({
   )
 }
 
-export function filterWorks(works: Work[], category: FilterCategory, query = '') {
+export function filterWorks(works: Work[], category: FilterCategory, query = '', tag = '') {
   const normalizedQuery = query.toLowerCase().trim()
+  const normalizedTag = tag.trim().toLowerCase()
   return works.filter((work) => {
     const matchesCategory = category === '全部' || work.category === category
-    const searchable = `${work.title} ${work.creator} ${work.handle} ${work.category}`.toLowerCase()
-    return matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery))
+    const matchesTag =
+      !normalizedTag || (work.tags ?? []).some((item) => item.toLowerCase() === normalizedTag)
+    const searchable =
+      `${work.title} ${work.creator} ${work.handle} ${work.category} ${(work.tags ?? []).join(' ')}`.toLowerCase()
+    return (
+      matchesCategory && matchesTag && (!normalizedQuery || searchable.includes(normalizedQuery))
+    )
   })
 }
 
@@ -79,6 +77,15 @@ export function WorkCard({ work, featured = false }: { work: Work; featured?: bo
           <Link className="work-creator" to={`/creator/${work.handle}`}>
             @{work.handle}
           </Link>
+          {work.tags?.length ? (
+            <div className="work-card-tags" aria-label="标签">
+              {work.tags.slice(0, 3).map((tag) => (
+                <span className="tag-chip" key={tag}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="work-card-actions">
           <button

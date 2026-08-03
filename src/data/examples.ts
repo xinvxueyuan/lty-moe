@@ -24,6 +24,7 @@ export const exampleWorks: Work[] = [
     coAuthors: [],
     aiDisclosure: '未使用生成式 AI',
     origin: '原创',
+    tags: ['洛天依', '月面', '插画'],
   },
   {
     id: 'soft-machines',
@@ -38,11 +39,12 @@ export const exampleWorks: Work[] = [
     description:
       'A study of tender interfaces, tactile forms, and the quiet optimism of future tools.',
     date: '2024.06.15',
-    license: 'All rights reserved',
+    license: 'All rights reserved / 保留所有权利',
     maintainers: ['天依档案编辑组'],
     coAuthors: [],
     aiDisclosure: '未使用生成式 AI',
     origin: '原创',
+    tags: ['洛天依', '概念设计', '音源'],
   },
   {
     id: 'after-the-rain',
@@ -61,6 +63,7 @@ export const exampleWorks: Work[] = [
     coAuthors: [],
     aiDisclosure: '未使用生成式 AI',
     origin: '原创',
+    tags: ['洛天依', '雨后', '摄影'],
   },
   {
     id: 'blue-hour',
@@ -74,11 +77,12 @@ export const exampleWorks: Work[] = [
     palette: ['#293E83', '#E9B2A8', '#181C34'],
     description: '天依蓝的每一次显影，都是一间只能走进去一次的房间。',
     date: '2024.06.04',
-    license: 'All rights reserved',
+    license: 'All rights reserved / 保留所有权利',
     maintainers: ['天依档案编辑组'],
     coAuthors: [],
     aiDisclosure: '未使用生成式 AI',
     origin: '原创',
+    tags: ['洛天依', '天依蓝', '绘画'],
   },
   {
     id: 'small-rituals',
@@ -97,13 +101,14 @@ export const exampleWorks: Work[] = [
     coAuthors: [],
     aiDisclosure: '未使用生成式 AI',
     origin: '原创',
+    tags: ['洛天依', '日常', '同人'],
   },
   {
     id: 'the-last-sun',
     title: 'The Last Sun / 最后的应援灯',
     creator: 'Juno Vale',
     handle: 'junovale',
-    category: '3D / 动画',
+    category: '3D',
     image: lastSunImage,
     likes: '3.3k',
     comments: 76,
@@ -115,5 +120,6 @@ export const exampleWorks: Work[] = [
     coAuthors: [],
     aiDisclosure: '未使用生成式 AI',
     origin: '原创',
+    tags: ['洛天依', '应援', '3D'],
   },
 ]
