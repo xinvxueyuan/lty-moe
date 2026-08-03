@@ -2,12 +2,17 @@ import { Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLoaderData, useSearchParams } from 'react-router'
 import { CategoryFilters, ResultsToolbar, useFilteredWorks, WorkGrid } from '../components/catalog'
+import { RouteFallback } from '../components/route-fallback'
 import type { FilterCategory, Work } from '../data/types'
 import { Input } from '../components/ui/input'
-import { listWorks } from '../db/client.server'
+import { fetchWorks } from '../lib/api'
 
-export async function loader() {
-  return { works: await listWorks() }
+export async function clientLoader() {
+  return { works: await fetchWorks() }
+}
+
+export function HydrateFallback() {
+  return <RouteFallback eyebrow="DISCOVER / LOADING" title="正在打开展厅…" />
 }
 
 export default function Explore() {

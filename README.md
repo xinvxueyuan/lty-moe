@@ -9,6 +9,17 @@
 3. 提交后作品会**立即发布**到展厅，无需审核队列。
 4. 许可证、维护者、共同作者、AI 使用声明和原创/转载来源会与作品一并写入档案。
 
+## 渲染模式（混合架构）
+
+全局启用 React Router SSR（`ssr: true`），按路由差分数据加载：
+
+| 路由                                  | 模式                   | 说明                                           |
+| ------------------------------------- | ---------------------- | ---------------------------------------------- |
+| `/`、`/works/:id`、`/creator/:handle` | SSR                    | server `loader` 直接读 SQLite，利于 SEO 与首屏 |
+| `/explore`、`/following`              | SPA 数据层             | `clientLoader` 请求 `/api/works`，带骨架屏     |
+| `/upload`                             | SSR 壳 + server action | 表单客户端交互，提交写盘并入库                 |
+| `/api/works`、`/api/works/:id`        | Resource API           | JSON，供 SPA 路由与外部客户端使用              |
+
 ## 本地开发
 
 ```bash
