@@ -3,6 +3,7 @@ import { Form, Link, useActionData, useLoaderData, useNavigation } from 'react-r
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { getDb, promisifyGet, promisifyRun } from '../db/client.server'
+import { issueEmailToken } from '../db/email-tokens.server'
 import { createUser, getUserByEmail, getUserByHandle } from '../db/users.server'
 import { loadAuthContext, withAuthCookies } from '../lib/auth.server'
 import {
@@ -11,6 +12,7 @@ import {
   validateHandle,
   validatePassword,
 } from '../lib/auth-validate'
+import { appBaseUrl, sendMail } from '../lib/mail.server'
 import { rateLimit } from '../lib/rate-limit.server'
 import { createSession, sessionCookieHeader } from '../lib/session.server'
 
@@ -68,7 +70,26 @@ export async function action({ request }: { request: Request }) {
     bio,
     role: 'creator',
   })
-  const token = await createSession(db, promisifyRun, id)
+  try {
+    const name = displayName.replace(/\s+/g, ' ').trim()
+    const verifyToken = await issueEmailToken(db, promisifyRun, id, 'verify-email', 24 * 60)
+    await sendMail({
+      to: email,
+      template: 'welcome',
+      vars: { name, url: `${appBaseUrl(request)}/dashboard` },
+    })
+    await sendMail({
+      to: email,
+      template: 'verify-email',
+      vars: { name, url: `${appBaseUrl(request)}/verify-email?token=${verifyToken}` },
+    })
+  } catch {
+    // mail is best-effort
+  }
+  const token = await createSession(db, promisifyRun, id, {
+    userAgent: request.headers.get('user-agent') || '',
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local',
+  })
   const headers = new Headers({ Location: '/dashboard' })
   headers.append('Set-Cookie', sessionCookieHeader(token))
   return new Response(null, { status: 303, headers })

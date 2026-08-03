@@ -50,11 +50,14 @@ export async function action({ request }: { request: Request }) {
 
   const db = await getDb()
   const user = await getUserByEmail(db, promisifyGet, email)
-  if (!user || !(await verifyPassword(password, user.password_hash))) {
+  if (!user?.password_hash || !(await verifyPassword(password, user.password_hash))) {
     return { errors: ['邮箱或密码不正确。'] }
   }
 
-  const token = await createSession(db, promisifyRun, user.id)
+  const token = await createSession(db, promisifyRun, user.id, {
+    userAgent: request.headers.get('user-agent') || '',
+    ip,
+  })
   const headers = new Headers({ Location: next.startsWith('/') ? next : '/dashboard' })
   headers.append('Set-Cookie', sessionCookieHeader(token))
   if (auth.setCookieHeaders[0]) headers.append('Set-Cookie', auth.setCookieHeaders[0])
@@ -85,6 +88,10 @@ export default function LoginPage() {
             ))}
           </ul>
         ) : null}
+        <a className="oauth-button" href={`/auth/github?next=${encodeURIComponent(next)}`}>
+          使用 GitHub 登录
+        </a>
+        <p className="auth-or">或</p>
         <Form className="submission-form" method="post">
           <input name="_csrf" type="hidden" value={data.csrfToken} />
           <input name="next" type="hidden" value={next} />
@@ -106,6 +113,9 @@ export default function LoginPage() {
             {busy ? '登录中…' : '登录'}
           </button>
         </Form>
+        <p className="auth-switch">
+          <Link to="/forgot-password">忘记密码？</Link>
+        </p>
         <p className="auth-switch">
           还没有账号？ <Link to="/register">注册创作者</Link>
         </p>

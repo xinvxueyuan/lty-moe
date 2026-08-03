@@ -34,6 +34,9 @@ export async function migrateDatabase(db: sqlite3.Database, helpers: DbHelpers):
   if (current < 3) {
     await migrateToV3(db, helpers)
   }
+  if (current < 4) {
+    await migrateToV4(db, helpers)
+  }
 
   await run(
     db,
@@ -87,4 +90,36 @@ async function migrateToV3(db: sqlite3.Database, helpers: DbHelpers): Promise<vo
   await run(db, `UPDATE works SET status = 'published' WHERE status IS NULL OR status = ''`)
   await run(db, `UPDATE works SET body = COALESCE(body, '')`)
   await run(db, `UPDATE works SET updated_at = COALESCE(updated_at, created_at, datetime('now'))`)
+}
+
+async function migrateToV4(db: sqlite3.Database, helpers: DbHelpers): Promise<void> {
+  const { all, exec } = helpers
+  const userCols = await tableColumns(db, all, 'users')
+  const sessionCols = await tableColumns(db, all, 'sessions')
+
+  if (!userCols.has('github_id')) {
+    await exec(db, `ALTER TABLE users ADD COLUMN github_id TEXT`)
+  }
+  if (!userCols.has('email_verified_at')) {
+    await exec(db, `ALTER TABLE users ADD COLUMN email_verified_at TEXT`)
+  }
+  if (!userCols.has('locale')) {
+    await exec(db, `ALTER TABLE users ADD COLUMN locale TEXT NOT NULL DEFAULT 'zh-CN'`)
+  }
+
+  if (!sessionCols.has('user_agent')) {
+    await exec(db, `ALTER TABLE sessions ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''`)
+  }
+  if (!sessionCols.has('ip')) {
+    await exec(db, `ALTER TABLE sessions ADD COLUMN ip TEXT NOT NULL DEFAULT ''`)
+  }
+  if (!sessionCols.has('label')) {
+    await exec(db, `ALTER TABLE sessions ADD COLUMN label TEXT NOT NULL DEFAULT ''`)
+  }
+  if (!sessionCols.has('last_seen_at')) {
+    await exec(
+      db,
+      `ALTER TABLE sessions ADD COLUMN last_seen_at TEXT NOT NULL DEFAULT (datetime('now'))`,
+    )
+  }
 }
