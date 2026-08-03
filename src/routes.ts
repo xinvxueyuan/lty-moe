@@ -10,5 +10,6 @@ export default [
   route('api/works', './routes/api.works.ts'),
   route('api/works/:id', './routes/api.works.$id.ts'),
   route('api/images', './routes/api.images.ts'),
+  route('api/tags', './routes/api.tags.ts'),
   route('*', './routes/not-found.tsx'),
 ] satisfies RouteConfig

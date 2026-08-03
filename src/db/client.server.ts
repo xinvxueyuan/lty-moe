@@ -1,9 +1,11 @@
 import sqlite3 from 'sqlite3'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { schema } from './schema'
 import { exampleWorks } from '../data/examples'
+import { normalizeCategory } from '../data/taxonomy'
 import type { Work } from '../data/types'
+import { migrateDatabase } from './migrate.server'
+import { getTagsForWorks, listTags, setWorkTags } from './tags.server'
 
 type WorkRow = {
   id: string
@@ -31,7 +33,11 @@ let databasePromise: Promise<sqlite3.Database> | null = null
 
 type RunResult = { lastID: number; changes: number }
 
-function promisifyRun(db: sqlite3.Database, sql: string, params: unknown[]): Promise<RunResult> {
+function promisifyRun(
+  db: sqlite3.Database,
+  sql: string,
+  params: unknown[] = [],
+): Promise<RunResult> {
   return new Promise((resolvePromise, reject) => {
     db.run(sql, params, function (err) {
       if (err) reject(err)
@@ -71,6 +77,13 @@ function promisifyExec(db: sqlite3.Database, sql: string): Promise<void> {
   })
 }
 
+const helpers = {
+  run: promisifyRun,
+  get: promisifyGet,
+  all: promisifyAll,
+  exec: promisifyExec,
+}
+
 function openDatabase(): Promise<sqlite3.Database> {
   if (databasePromise) return databasePromise
   const path = process.env.DATABASE_PATH || resolve(process.cwd(), 'data', 'lty-moe.db')
@@ -83,7 +96,7 @@ function openDatabase(): Promise<sqlite3.Database> {
         return
       }
       try {
-        await promisifyExec(db, schema)
+        await migrateDatabase(db, helpers)
         await seedDemoWorks(db)
         resolvePromise(db)
       } catch (seedErr) {
@@ -106,12 +119,13 @@ async function seedDemoWorks(db: sqlite3.Database): Promise<void> {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `
   for (const work of exampleWorks) {
+    const category = normalizeCategory(work.category) ?? work.category
     await promisifyRun(db, insert, [
       work.id,
       work.title,
       work.creator,
       work.handle,
-      work.category,
+      category,
       work.image,
       work.likes,
       work.comments,
@@ -126,16 +140,19 @@ async function seedDemoWorks(db: sqlite3.Database): Promise<void> {
       work.origin,
       work.date.replaceAll('.', '-') + ' 00:00:00',
     ])
+    if (work.tags?.length) {
+      await setWorkTags(db, promisifyRun, work.id, work.tags)
+    }
   }
 }
 
-function rowToWork(row: WorkRow): Work {
+function rowToWork(row: WorkRow, tags: string[] = []): Work {
   return {
     id: row.id,
     title: row.title,
     creator: row.creator,
     handle: row.handle,
-    category: row.category,
+    category: (normalizeCategory(row.category) ?? row.category) as Work['category'],
     image: row.image,
     likes: row.likes,
     comments: row.comments,
@@ -149,6 +166,7 @@ function rowToWork(row: WorkRow): Work {
     aiDisclosure: row.ai_disclosure,
     origin: row.origin,
     submittedBy: row.submitted_by ?? undefined,
+    tags,
   }
 }
 
@@ -158,24 +176,60 @@ const selectColumns = `
   ai_disclosure, origin, submitted_by, created_at
 `
 
-export async function listWorks(): Promise<Work[]> {
+async function attachTags(db: sqlite3.Database, works: Work[]): Promise<Work[]> {
+  const tagMap = await getTagsForWorks(
+    db,
+    promisifyAll,
+    works.map((work) => work.id),
+  )
+  return works.map((work) => ({ ...work, tags: tagMap.get(work.id) ?? [] }))
+}
+
+export type ListWorksOptions = {
+  category?: string
+  tag?: string
+}
+
+export async function listWorks(options: ListWorksOptions = {}): Promise<Work[]> {
   const db = await openDatabase()
+  const params: unknown[] = []
+  const clauses: string[] = []
+
+  if (options.category && options.category !== '全部') {
+    clauses.push('category = ?')
+    params.push(options.category)
+  }
+  if (options.tag) {
+    clauses.push(
+      `id IN (SELECT work_id FROM work_tags wt JOIN tags t ON t.id = wt.tag_id WHERE t.name = ? OR t.id = ?)`,
+    )
+    params.push(options.tag, options.tag)
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
   const rows = (await promisifyAll(
     db,
-    `SELECT ${selectColumns} FROM works ORDER BY created_at DESC`,
+    `SELECT ${selectColumns} FROM works ${where} ORDER BY created_at DESC`,
+    params,
   )) as unknown as WorkRow[]
-  return rows.map(rowToWork)
+  return attachTags(
+    db,
+    rows.map((row) => rowToWork(row)),
+  )
 }
 
 export async function getWorkById(id: string): Promise<Work | null> {
   const db = await openDatabase()
   const row = (await promisifyGet(db, `SELECT ${selectColumns} FROM works WHERE id = ?`, [id])) as
     WorkRow | undefined
-  return row ? rowToWork(row) : null
+  if (!row) return null
+  const [work] = await attachTags(db, [rowToWork(row)])
+  return work
 }
 
 export async function insertWork(work: Work): Promise<void> {
   const db = await openDatabase()
+  const category = normalizeCategory(work.category) ?? work.category
   await promisifyRun(
     db,
     `
@@ -190,7 +244,7 @@ export async function insertWork(work: Work): Promise<void> {
       work.title,
       work.creator,
       work.handle,
-      work.category,
+      category,
       work.image,
       work.likes,
       work.comments,
@@ -206,4 +260,12 @@ export async function insertWork(work: Work): Promise<void> {
       work.submittedBy ?? null,
     ],
   )
+  if (work.tags?.length) {
+    await setWorkTags(db, promisifyRun, work.id, work.tags)
+  }
+}
+
+export async function listAllTags() {
+  const db = await openDatabase()
+  return listTags(db, promisifyAll)
 }

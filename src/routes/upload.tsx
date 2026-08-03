@@ -29,6 +29,7 @@ export async function action({ request }: { request: Request }) {
     aiDisclosure: read('aiDisclosure'),
     origin: read('origin'),
     copyright: read('copyright'),
+    tags: read('tags'),
   }
 
   const errors: string[] = []
@@ -166,6 +167,14 @@ export default function Upload() {
                 aria-label="共同作者"
                 name="coAuthors"
                 placeholder="每行或逗号分隔，最多 12 位"
+              />
+            </label>
+            <label className="submission-field">
+              <span>标签 / Tags（可选）</span>
+              <Input
+                aria-label="标签"
+                name="tags"
+                placeholder="逗号分隔，例如：洛天依, 曲绘, 天依蓝"
               />
             </label>
             <label className="submission-field">

@@ -1,19 +1,12 @@
-export const workCategories = [
-  '全部',
-  '插画',
-  '曲绘',
-  '摄影',
-  '绘画',
-  '概念设计',
-  'PV / 动画',
-  '3D',
-  '3D / 动画',
-  '其他',
-] as const
+import type { WorkCategory as TaxonomyWorkCategory } from './taxonomy'
 
-export type WorkCategory = Exclude<(typeof workCategories)[number], '全部'>
-
-export const allowedCategories = ['插画', '曲绘', 'PV / 动画', '3D', '其他']
+export {
+  allowedCategories,
+  filterCategories,
+  workCategories,
+  type FilterCategory,
+  type WorkCategory,
+} from './taxonomy'
 
 export const allowedLicenses = [
   'All rights reserved / 保留所有权利',
@@ -36,7 +29,7 @@ export type Work = {
   title: string
   creator: string
   handle: string
-  category: WorkCategory
+  category: TaxonomyWorkCategory
   image: string
   likes: string
   comments: number
@@ -50,6 +43,7 @@ export type Work = {
   aiDisclosure: AiDisclosure
   origin: WorkOrigin
   submittedBy?: string
+  tags?: string[]
 }
 
 export type Creator = {
@@ -61,4 +55,8 @@ export type Creator = {
   bio: string
 }
 
-export type FilterCategory = '全部' | WorkCategory
+export type Tag = {
+  id: string
+  name: string
+  kind: 'user' | 'system'
+}

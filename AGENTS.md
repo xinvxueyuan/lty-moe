@@ -5,6 +5,7 @@
 - `src/` contains the React Router application: routes, components, styles, and shared data types.
 - `src/db/` holds SQLite schema and the server-side database client (`client.server.ts`).
 - `src/data/examples.ts` holds demo seed works inserted at runtime when the database is empty.
+- `src/data/taxonomy.ts` is the single source of truth for categories and tag parsing rules.
 - `src/lib/validate-work.ts` validates upload form input; `src/lib/api.ts` is the browser fetch client; `src/lib/works-cache.ts` is the in-memory client cache; `src/lib/save-upload.server.ts` writes upload files on the server.
 - `src/assets/images/` contains Vite-managed gallery artwork used by seed data.
 - `server.js` is the production Node HTTP server (SSR + static `/uploads` and client assets).

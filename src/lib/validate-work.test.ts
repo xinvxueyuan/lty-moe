@@ -71,7 +71,7 @@ test('validateWorkForm rejects invalid handle characters', () => {
 test('validateWorkForm rejects unknown category license ai origin', () => {
   const result = validateWorkForm(
     validInput({
-      category: '摄影',
+      category: '不存在的类型',
       license: 'WTFPL',
       aiDisclosure: '未知',
       origin: '二次创作',
@@ -81,6 +81,17 @@ test('validateWorkForm rejects unknown category license ai origin', () => {
   assert.ok(result.errors.some((e) => e.includes('许可证')))
   assert.ok(result.errors.some((e) => e.includes('AI 使用声明')))
   assert.ok(result.errors.some((e) => e.includes('作品来源')))
+})
+
+test('validateWorkForm accepts tags and trims them', () => {
+  const result = validateWorkForm(validInput({ tags: '洛天依, 曲绘, 洛天依' }))
+  assert.deepEqual(result.errors, [])
+  assert.deepEqual(result.work?.tags, ['洛天依', '曲绘'])
+})
+
+test('validateWorkForm rejects oversized tags', () => {
+  const result = validateWorkForm(validInput({ tags: 'x'.repeat(21) }))
+  assert.ok(result.errors.some((e) => e.includes('标签')))
 })
 
 test('validateWorkForm rejects non-https source urls', () => {

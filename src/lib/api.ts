@@ -16,15 +16,30 @@ async function readJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function fetchWorks(options: { force?: boolean } = {}): Promise<Work[]> {
-  if (!options.force) {
+export async function fetchWorks(
+  options: { force?: boolean; category?: string; tag?: string } = {},
+): Promise<Work[]> {
+  const hasFilter = Boolean(options.category || options.tag)
+  if (!options.force && !hasFilter) {
     const cached = getCachedWorks()
     if (cached) return cached
   }
-  const response = await fetch('/api/works', { credentials: 'same-origin' })
+  const params = new URLSearchParams()
+  if (options.category) params.set('category', options.category)
+  if (options.tag) params.set('tag', options.tag)
+  const query = params.toString()
+  const response = await fetch(`/api/works${query ? `?${query}` : ''}`, {
+    credentials: 'same-origin',
+  })
   const data = await readJson<{ works: Work[] }>(response)
-  setCachedWorks(data.works)
+  if (!hasFilter) setCachedWorks(data.works)
   return data.works
+}
+
+export async function fetchTags(): Promise<{ id: string; name: string; kind: string }[]> {
+  const response = await fetch('/api/tags', { credentials: 'same-origin' })
+  const data = await readJson<{ tags: { id: string; name: string; kind: string }[] }>(response)
+  return data.tags
 }
 
 export async function fetchWork(id: string, options: { force?: boolean } = {}): Promise<Work> {
