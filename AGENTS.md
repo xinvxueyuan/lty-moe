@@ -15,6 +15,8 @@
 
 Default seeded admin (only when users table empty): `admin@lty.local` / `admin123456` (override with `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_HANDLE`).
 
+Platform extensions: multi-device sessions, markdown rich text (`src/lib/markdown.ts` + `RichTextEditor`), GitHub OAuth (`/auth/github`), email templates (`src/email/templates.ts` + `logs/mail` fallback), audit/app logs (`src/lib/logger.server.ts`), i18n (`src/i18n/*`, cookie `lty_locale`).
+
 ## Rendering Strategy (hybrid SPA + SSR)
 
 Keep `ssr: true` globally. Choose data loading per route:

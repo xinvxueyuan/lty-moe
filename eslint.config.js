@@ -48,7 +48,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/components/catalog.tsx', 'src/root.tsx', 'src/routes/**/*.{ts,tsx}'],
+    files: [
+      'src/components/catalog.tsx',
+      'src/root.tsx',
+      'src/i18n/i18n.tsx',
+      'src/routes/**/*.{ts,tsx}',
+    ],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

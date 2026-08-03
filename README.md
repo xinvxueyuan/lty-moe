@@ -41,6 +41,17 @@ curl -X POST http://127.0.0.1:3000/api/images \
 
 首次空库会创建管理员：`admin@lty.local` / `admin123456`（可用环境变量 `ADMIN_EMAIL` `ADMIN_PASSWORD` 覆盖）。图床 `POST /api/images` 需登录。
 
+### 环境变量（可选）
+
+| 变量                                        | 用途                                        |
+| ------------------------------------------- | ------------------------------------------- |
+| `APP_URL`                                   | 站点绝对 URL（OAuth / 邮件链接）            |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth                                |
+| `MAIL_WEBHOOK_URL` / `MAIL_WEBHOOK_TOKEN`   | 邮件发送 webhook；未配置时写入 `logs/mail/` |
+| `LOG_DIR`                                   | 应用日志目录（默认 `logs/`）                |
+
+多设备会话：同一账号可在多端同时登录（30 天滑动过期）；在 `/account` 可查看并注销设备。
+
 ## 本地开发
 
 ```bash

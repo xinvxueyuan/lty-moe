@@ -18,7 +18,9 @@ import type { Work } from '../data/types'
 import { getWorkById, listWorks } from '../db/client.server'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
+import { RichText } from '../components/rich-text'
 import { Textarea } from '../components/ui/textarea'
+import { useI18n } from '../i18n/i18n'
 import { fetchWork, fetchWorks } from '../lib/api'
 import { getCachedWork, getCachedWorks, setCachedWork, setCachedWorks } from '../lib/works-cache'
 
@@ -64,6 +66,7 @@ export async function clientLoader({
 }
 
 export default function WorkDetail() {
+  const { t } = useI18n()
   const { work, nextWork } = useLoaderData<{ work: Work; nextWork: Work }>()
   const navigate = useNavigate()
   const [liked, setLiked] = useState(false)
@@ -73,7 +76,7 @@ export default function WorkDetail() {
   return (
     <section className="archive-container page-shell detail-page">
       <button className="back-button" onClick={() => navigate(-1)} type="button">
-        <ArrowLeft size={15} /> 返回上一页
+        <ArrowLeft size={15} /> {t('work.back')}
       </button>
       <div className="detail-layout">
         <div className="detail-image-wrap">
@@ -95,20 +98,20 @@ export default function WorkDetail() {
             <span className={`creator-avatar tone-${creator.tone}`}>{creator.initials}</span>
             <span>
               <strong>{work.creator}</strong>
-              <small>@{work.handle} · 同人创作者</small>
+              <small>
+                @{work.handle} · {t('work.creator')}
+              </small>
             </span>
             <ArrowRight size={16} />
           </Link>
           <p className="detail-description">{work.description}</p>
-          {work.body && work.body !== work.description ? (
-            <div className="detail-body">
-              {work.body.split('\n').map((line, index) => (
-                <p key={`${index}-${line.slice(0, 12)}`}>{line || '\u00A0'}</p>
-              ))}
+          {work.body ? (
+            <div aria-label={t('work.body')} className="detail-body">
+              <RichText source={work.body} />
             </div>
           ) : null}
           {work.tags?.length ? (
-            <div aria-label="作品标签" className="detail-tags">
+            <div aria-label={t('work.tags')} className="detail-tags">
               {work.tags.map((tag) => (
                 <span className="tag-chip" key={tag}>
                   {tag}
@@ -117,7 +120,7 @@ export default function WorkDetail() {
             </div>
           ) : null}
           <div className="palette-row">
-            <span>COLOR NOTES</span>
+            <span>{t('work.colorNotes')}</span>
             <div>
               {work.palette.map((color) => (
                 <i
@@ -146,24 +149,22 @@ export default function WorkDetail() {
             <div className="rights-grid">
               <div className="rights-cell">
                 <BadgeCheck size={16} />
-                <span>许可证 / LICENSE</span>
+                <span>{t('work.license')}</span>
                 <strong>{work.license}</strong>
               </div>
               <div className="rights-cell">
                 <UserRoundCog size={16} />
-                <span>维护者 / MAINTAINERS</span>
-                <strong>{work.maintainers.length ? work.maintainers.join('、') : '未记录'}</strong>
+                <span>{t('work.maintainers')}</span>
+                <strong>{work.maintainers.length ? work.maintainers.join('、') : '—'}</strong>
               </div>
               <div className="rights-cell">
                 <UsersRound size={16} />
-                <span>共同作者 / CO-AUTHORS</span>
-                <strong>
-                  {work.coAuthors.length ? work.coAuthors.join('、') : '暂无共同作者'}
-                </strong>
+                <span>{t('work.coAuthors')}</span>
+                <strong>{work.coAuthors.length ? work.coAuthors.join('、') : '—'}</strong>
               </div>
               <div className="rights-cell rights-cell-ai">
                 <Bot size={16} />
-                <span>AI 使用声明 / AI DISCLOSURE</span>
+                <span>{t('work.ai')}</span>
                 <Badge>{work.aiDisclosure}</Badge>
               </div>
             </div>
@@ -175,10 +176,10 @@ export default function WorkDetail() {
               variant="outline"
             >
               <Heart fill={liked ? 'currentColor' : 'none'} size={17} />{' '}
-              {liked ? '已喜欢' : `喜欢 ${work.likes}`}
+              {liked ? t('work.liked') : `${t('work.like')} ${work.likes}`}
             </Button>
             <Button
-              aria-label="收藏作品"
+              aria-label={t('work.save')}
               className={saved ? 'detail-action-active' : ''}
               onClick={() => setSaved((value) => !value)}
               size="icon"
@@ -193,7 +194,7 @@ export default function WorkDetail() {
           <div className="comment-panel">
             <div className="comment-heading">
               <span>
-                <MessageCircle size={15} /> 评论 {work.comments}
+                <MessageCircle size={15} /> {t('work.comment')} {work.comments}
               </span>
               <span>友善地说点什么</span>
             </div>

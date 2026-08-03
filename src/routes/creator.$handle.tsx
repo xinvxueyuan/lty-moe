@@ -7,6 +7,7 @@ import type { Creator, Work } from '../data/types'
 import { listWorks } from '../db/client.server'
 import { Button } from '../components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+import { useI18n } from '../i18n/i18n'
 
 export async function loader({ params }: { params: { handle: string } }) {
   const works = await listWorks()
@@ -17,6 +18,7 @@ export async function loader({ params }: { params: { handle: string } }) {
 }
 
 export default function CreatorDetail() {
+  const { t } = useI18n()
   const { creator, creatorWorks } = useLoaderData<{ creator: Creator; creatorWorks: Work[] }>()
   const [following, setFollowing] = useState(false)
   const [tab, setTab] = useState('works')
@@ -32,7 +34,9 @@ export default function CreatorDetail() {
         <div className="profile-copy">
           <p className="eyebrow">CREATOR / 00{Math.max(1, creatorWorks.length)}</p>
           <h1>{creator.name}</h1>
-          <p>@{creator.handle} · 洛天依同人创作者</p>
+          <p>
+            @{creator.handle} · {t('work.creator')}
+          </p>
         </div>
         <Button
           className={following ? 'following-button' : ''}
@@ -40,24 +44,24 @@ export default function CreatorDetail() {
           variant={following ? 'outline' : 'primary'}
         >
           {following ? <Heart fill="currentColor" size={15} /> : <Plus size={15} />}{' '}
-          {following ? '已关注' : '关注'}
+          {following ? t('creator.follow') + ' ✓' : t('creator.follow')}
         </Button>
       </div>
       <div className="creator-stats">
         <span>
-          <b>{creator.followers}</b> 关注者
+          <b>{creator.followers}</b>
         </span>
         <span>
-          <b>{creatorWorks.length + 14}</b> 作品
+          <b>{creatorWorks.length}</b> {t('creator.works')}
         </span>
         <span>
-          <b>2021</b> 加入天依档案
+          <b>2021</b>
         </span>
       </div>
       <Tabs onValueChange={setTab} value={tab}>
         <TabsList className="creator-tabs">
           <TabsTrigger value="works">
-            作品 <small>{creatorWorks.length}</small>
+            {t('creator.works')} <small>{creatorWorks.length}</small>
           </TabsTrigger>
           <TabsTrigger value="saved">收藏夹</TabsTrigger>
           <TabsTrigger value="about">关于</TabsTrigger>

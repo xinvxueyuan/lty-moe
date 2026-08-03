@@ -1,4 +1,5 @@
 import { Form, Link, useActionData, useLoaderData, useNavigation } from 'react-router'
+import { RichTextEditor } from '../components/rich-text-editor'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import {
@@ -123,16 +124,12 @@ export default function EditWorkPage() {
               rows={3}
             />
           </label>
-          <label className="submission-field">
-            <span>正文</span>
-            <Textarea
-              aria-label="正文"
-              className="editor-body"
-              defaultValue={work.body || ''}
-              name="body"
-              rows={16}
-            />
-          </label>
+          <RichTextEditor
+            defaultValue={work.body || ''}
+            label="正文（Markdown 富文本）"
+            name="body"
+            rows={16}
+          />
         </div>
         <aside className="dashboard-panel editor-side">
           <p className="status-pill">状态：{work.status}</p>
