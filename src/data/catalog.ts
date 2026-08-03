@@ -1,23 +1,4 @@
-import submissions from './submissions.json'
-import type { Creator, Submission, Work } from './types'
-import { seedWorks } from './works'
-
-type RawSubmission = Omit<
-  Submission,
-  'license' | 'maintainers' | 'coAuthors' | 'aiDisclosure' | 'origin'
-> &
-  Partial<Pick<Submission, 'license' | 'maintainers' | 'coAuthors' | 'aiDisclosure' | 'origin'>>
-
-const submissionWorks = (submissions as RawSubmission[]).map((submission) => ({
-  license: '未声明',
-  maintainers: [],
-  coAuthors: [],
-  aiDisclosure: '未披露' as const,
-  origin: '未声明' as const,
-  ...submission,
-}))
-
-export const works: Work[] = [...seedWorks, ...submissionWorks]
+import type { Creator, Work } from './types'
 
 export const featuredCreators: Creator[] = [
   {
@@ -67,7 +48,7 @@ export function getCreator(handle: string): Creator {
   )
 }
 
-export function getCreatorWorks(handle: string): Work[] {
+export function getCreatorWorks(handle: string, works: Work[]): Work[] {
   const aliases: Record<string, string[]> = {
     'sora-kim': ['blue-hour', 'the-last-sun'],
     yukiko_rai: ['lunar-garden', 'small-rituals'],

@@ -1,15 +1,21 @@
 import { Search, X } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useLoaderData, useSearchParams } from 'react-router'
 import { CategoryFilters, ResultsToolbar, useFilteredWorks, WorkGrid } from '../components/catalog'
-import type { FilterCategory } from '../data/types'
+import type { FilterCategory, Work } from '../data/types'
 import { Input } from '../components/ui/input'
+import { listWorks } from '../db/client.server'
+
+export async function loader() {
+  return { works: await listWorks() }
+}
 
 export default function Explore() {
+  const { works } = useLoaderData<{ works: Work[] }>()
   const [searchParams] = useSearchParams()
   const [category, setCategory] = useState<FilterCategory>('全部')
   const [query, setQuery] = useState(searchParams.get('q') ?? '')
-  const visibleWorks = useFilteredWorks(category, query)
+  const visibleWorks = useFilteredWorks(works, category, query)
 
   function updateQuery(value: string) {
     setQuery(value)

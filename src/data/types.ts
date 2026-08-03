@@ -13,9 +13,23 @@ export const workCategories = [
 
 export type WorkCategory = Exclude<(typeof workCategories)[number], '全部'>
 
-export type AiDisclosure = '未使用生成式 AI' | '使用 AI 辅助创作' | '主要由 AI 生成' | '未披露'
+export const allowedCategories = ['插画', '曲绘', 'PV / 动画', '3D', '其他']
 
-export type WorkOrigin = '原创' | '转载' | '未声明'
+export const allowedLicenses = [
+  'All rights reserved / 保留所有权利',
+  'CC BY 4.0',
+  'CC BY-NC 4.0',
+  'CC BY-NC-SA 4.0',
+  '其他（请在作品简介中说明）',
+]
+
+export const allowedAiDisclosures = ['未使用生成式 AI', '使用 AI 辅助创作', '主要由 AI 生成']
+
+export const allowedOrigins = ['原创', '转载']
+
+export type AiDisclosure = (typeof allowedAiDisclosures)[number] | '未披露'
+
+export type WorkOrigin = (typeof allowedOrigins)[number] | '未声明'
 
 export type Work = {
   id: string
@@ -35,25 +49,7 @@ export type Work = {
   coAuthors: string[]
   aiDisclosure: AiDisclosure
   origin: WorkOrigin
-  canonicalAuthorId?: string
-  discussionNumber?: number
-  discussionId?: string
-  discussionUrl?: string
-}
-
-export type Submission = Work & {
-  sourceIssue: number
-  sourceIssueUrl: string
-  sourceUrl: string | null
-  submittedBy: string
-}
-
-export type Author = {
-  id: string
-  displayName: string
-  handles: string[]
-  aliases: string[]
-  workIds: string[]
+  submittedBy?: string
 }
 
 export type Creator = {

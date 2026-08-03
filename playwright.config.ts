@@ -14,9 +14,8 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4173',
-    env: { ...process.env, VITE_BASE_PATH: '/lty-moe/' },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    url: 'http://127.0.0.1:4173/lty-moe/',
+    url: 'http://127.0.0.1:4173/',
   },
 })

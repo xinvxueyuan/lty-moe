@@ -985,6 +985,56 @@ h2 {
     monospace;
   text-align: center;
 }
+.submission-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+.submission-field {
+  display: grid;
+  gap: 7px;
+}
+.submission-field > span {
+  color: var(--muted);
+  font:
+    10px 'DM Mono',
+    monospace;
+}
+.submission-select {
+  height: 42px;
+  width: 100%;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  outline: 0;
+  background: var(--panel);
+  color: var(--paper);
+  font-size: 12px;
+}
+.submission-select:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px #71e2e814;
+}
+.submission-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.submission-check input {
+  accent-color: var(--pink);
+}
+.submission-errors {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #ff70aa55;
+  background: #2a0f1c66;
+  color: #ffb3d1;
+  font-size: 10px;
+  line-height: 1.6;
+}
 
 .detail-page {
   padding-bottom: 80px;
