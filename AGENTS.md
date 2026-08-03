@@ -5,7 +5,7 @@
 - `src/` contains the React Router application: routes, components, styles, and shared data types.
 - `src/db/` holds SQLite schema and the server-side database client (`client.server.ts`).
 - `src/data/examples.ts` holds demo seed works inserted at runtime when the database is empty.
-- `src/lib/validate-work.ts` validates upload form input; `src/lib/api.ts` is the browser fetch client for resource APIs.
+- `src/lib/validate-work.ts` validates upload form input; `src/lib/api.ts` is the browser fetch client; `src/lib/works-cache.ts` is the in-memory client cache; `src/lib/save-upload.server.ts` writes upload files on the server.
 - `src/assets/images/` contains Vite-managed gallery artwork used by seed data.
 - `server.js` is the production Node HTTP server (SSR + static `/uploads` and client assets).
 - `.github/workflows/` contains CI and CodeQL automation.
@@ -14,14 +14,15 @@
 
 Keep `ssr: true` globally. Choose data loading per route:
 
-| Kind         | Routes                                | How data loads                                        |
-| ------------ | ------------------------------------- | ----------------------------------------------------- |
-| SSR document | `/`, `/works/:id`, `/creator/:handle` | server `loader` → SQLite                              |
-| SPA data     | `/explore`, `/following`              | `clientLoader` + `HydrateFallback` → `GET /api/works` |
-| Mutation     | `/upload`                             | server `action` (multipart + disk + SQLite)           |
-| Resource API | `/api/works`, `/api/works/:id`        | loader-only modules returning `Response.json`         |
+| Kind         | Routes                                | How data loads                                                                   |
+| ------------ | ------------------------------------- | -------------------------------------------------------------------------------- |
+| SSR document | `/`, `/works/:id`, `/creator/:handle` | server `loader` → SQLite; client navigations may use cache / `clientLoader`      |
+| SPA data     | `/explore`, `/following`              | `clientLoader` + `HydrateFallback` → `GET /api/works` (memory cache, 60s TTL)    |
+| Mutation     | `/upload`                             | server `action` + `clientAction` invalidates works cache                         |
+| Resource API | `/api/works`, `/api/works/:id`        | JSON read APIs                                                                   |
+| Image host   | `POST /api/images`                    | multipart 图床；返回 `{ url, filename, size, contentType }`，文件落在 `/uploads` |
 
-Do not import `.server.ts` or sqlite3 from client-only modules. Prefer shared DB helpers for both page loaders and API routes.
+Client cache lives only in the browser process (`works-cache.ts`). Do not import `.server.ts` or sqlite3 from client-only modules. Prefer shared DB helpers for both page loaders and API routes.
 
 ## Build, Test, and Development Commands
 

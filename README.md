@@ -13,12 +13,21 @@
 
 全局启用 React Router SSR（`ssr: true`），按路由差分数据加载：
 
-| 路由                                  | 模式                   | 说明                                           |
-| ------------------------------------- | ---------------------- | ---------------------------------------------- |
-| `/`、`/works/:id`、`/creator/:handle` | SSR                    | server `loader` 直接读 SQLite，利于 SEO 与首屏 |
-| `/explore`、`/following`              | SPA 数据层             | `clientLoader` 请求 `/api/works`，带骨架屏     |
-| `/upload`                             | SSR 壳 + server action | 表单客户端交互，提交写盘并入库                 |
-| `/api/works`、`/api/works/:id`        | Resource API           | JSON，供 SPA 路由与外部客户端使用              |
+| 路由                                  | 模式             | 说明                                                                 |
+| ------------------------------------- | ---------------- | -------------------------------------------------------------------- |
+| `/`、`/works/:id`、`/creator/:handle` | SSR + 客户端缓存 | 首屏 server `loader`；客户端再导航优先走内存缓存 / API               |
+| `/explore`、`/following`              | SPA 数据层       | `clientLoader` → `/api/works`（60s 内存缓存）+ 骨架屏                |
+| `/upload`                             | SSR 壳 + action  | 提交成功后 `clientAction` 清空 works 缓存                            |
+| `/api/works`、`/api/works/:id`        | Resource API     | 作品 JSON                                                            |
+| `POST /api/images`                    | 图床 API         | `multipart/form-data` 字段 `image`（或 `file`），返回 `/uploads/...` |
+
+### 图床 API 示例
+
+```bash
+curl -X POST http://127.0.0.1:3000/api/images \
+  -F "image=@./art.png"
+# → {"url":"/uploads/img-….png","filename":"img-….png","size":…,"contentType":"image/png"}
+```
 
 ## 本地开发
 
