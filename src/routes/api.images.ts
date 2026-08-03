@@ -9,7 +9,10 @@ export async function loader() {
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'POST' } })
+    return Response.json(
+      { error: 'Method not allowed' },
+      { status: 405, headers: { Allow: 'POST' } },
+    )
   }
 
   const formData = await request.formData()
