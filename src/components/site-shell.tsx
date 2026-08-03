@@ -1,6 +1,17 @@
-import { Search, Plus, ArrowUpRight, Radio, Menu, X } from 'lucide-react'
+import {
+  Search,
+  Plus,
+  ArrowUpRight,
+  Radio,
+  Menu,
+  X,
+  LayoutDashboard,
+  LogOut,
+  User,
+} from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router'
+import { Form, Link, NavLink, useNavigate } from 'react-router'
+import type { PublicUser } from '../data/auth-types'
 import { Button } from './ui/button'
 import { Dialog, DialogHeader } from './ui/dialog'
 import { Input } from './ui/input'
@@ -11,7 +22,13 @@ const navigation = [
   { to: '/following', label: '关注' },
 ]
 
-export function SiteShell({ children }: { children: ReactNode }) {
+export function SiteShell({
+  children,
+  user = null,
+}: {
+  children: ReactNode
+  user?: PublicUser | null
+}) {
   const navigate = useNavigate()
   const [searchOpen, setSearchOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -25,6 +42,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
     setMobileOpen(false)
     navigate(`/explore?q=${encodeURIComponent(value)}`)
   }
+
+  const initials = user ? user.displayName.slice(0, 2).toUpperCase() : 'LY'
 
   return (
     <div className="app-shell">
@@ -58,12 +77,41 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <Search size={18} />
             </Button>
-            <Link className="header-submit" to="/upload">
-              <Plus size={16} /> <span>投稿作品</span>
+            <Link
+              className="header-submit"
+              to={user ? '/dashboard/works/new' : '/login?next=/dashboard/works/new'}
+            >
+              <Plus size={16} /> <span>{user ? '发布作品' : '投稿作品'}</span>
             </Link>
-            <span aria-hidden="true" className="header-avatar">
-              LY
-            </span>
+            {user ? (
+              <div className="header-user">
+                <Link
+                  aria-label="用户中心"
+                  className="header-avatar"
+                  to="/account"
+                  title={user.displayName}
+                >
+                  {initials}
+                </Link>
+                <Link aria-label="创作者仪表盘" className="header-icon-link" to="/dashboard">
+                  <LayoutDashboard size={17} />
+                </Link>
+                {user.role === 'admin' ? (
+                  <Link className="header-icon-link" to="/admin">
+                    管
+                  </Link>
+                ) : null}
+                <Form action="/logout" method="post">
+                  <button aria-label="退出登录" className="header-icon-link" type="submit">
+                    <LogOut size={16} />
+                  </button>
+                </Form>
+              </div>
+            ) : (
+              <Link aria-label="登录" className="header-avatar header-avatar-guest" to="/login">
+                <User size={16} />
+              </Link>
+            )}
             <Button
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? '关闭菜单' : '打开菜单'}
@@ -90,8 +138,47 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 <ArrowUpRight size={15} />
               </NavLink>
             ))}
-            <Link className="mobile-nav-link" onClick={() => setMobileOpen(false)} to="/upload">
-              投稿作品
+            {user ? (
+              <>
+                <Link
+                  className="mobile-nav-link"
+                  onClick={() => setMobileOpen(false)}
+                  to="/dashboard"
+                >
+                  创作者仪表盘
+                  <LayoutDashboard size={15} />
+                </Link>
+                <Link
+                  className="mobile-nav-link"
+                  onClick={() => setMobileOpen(false)}
+                  to="/account"
+                >
+                  用户中心
+                  <User size={15} />
+                </Link>
+                {user.role === 'admin' ? (
+                  <Link
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                    to="/admin"
+                  >
+                    管理后台
+                    <ArrowUpRight size={15} />
+                  </Link>
+                ) : null}
+              </>
+            ) : (
+              <Link className="mobile-nav-link" onClick={() => setMobileOpen(false)} to="/login">
+                登录 / 注册
+                <User size={15} />
+              </Link>
+            )}
+            <Link
+              className="mobile-nav-link"
+              onClick={() => setMobileOpen(false)}
+              to={user ? '/dashboard/works/new' : '/login'}
+            >
+              {user ? '发布作品' : '投稿作品'}
               <Plus size={15} />
             </Link>
           </nav>
@@ -108,7 +195,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <div className="footer-meta">
           <span>非官方同人项目</span>
           <span>© 2026</span>
-          <Link to="/upload">
+          <Link to={user ? '/dashboard/works/new' : '/login'}>
             分享你的作品 <ArrowUpRight size={13} />
           </Link>
         </div>

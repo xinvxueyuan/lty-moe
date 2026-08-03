@@ -1,7 +1,17 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from 'react-router'
 import type { ReactNode } from 'react'
+import type { PublicUser } from './data/auth-types'
 import { SiteShell } from './components/site-shell'
+import { loadAuthContext, withAuthCookies } from './lib/auth.server'
 import './styles.css'
+
+export async function loader({ request }: { request: Request }) {
+  const auth = await loadAuthContext(request)
+  return withAuthCookies(
+    Response.json({ user: auth.user, csrfToken: auth.csrfToken }),
+    auth.setCookieHeaders,
+  )
+}
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -15,7 +25,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <Links />
       </head>
       <body>
-        <SiteShell>{children}</SiteShell>
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -24,5 +34,10 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function Root() {
-  return <Outlet />
+  const data = useLoaderData<{ user: PublicUser | null; csrfToken: string }>()
+  return (
+    <SiteShell user={data.user}>
+      <Outlet />
+    </SiteShell>
+  )
 }

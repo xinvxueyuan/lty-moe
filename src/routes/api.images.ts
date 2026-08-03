@@ -1,3 +1,4 @@
+import { requireUser } from '../lib/auth.server'
 import { saveUploadFile, validateImageFile } from '../lib/save-upload.server'
 
 export async function loader() {
@@ -8,6 +9,7 @@ export async function loader() {
 }
 
 export async function action({ request }: { request: Request }) {
+  await requireUser(request)
   if (request.method !== 'POST') {
     return Response.json(
       { error: 'Method not allowed' },

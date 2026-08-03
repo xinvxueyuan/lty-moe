@@ -1,3 +1,4 @@
+import type { WorkStatus } from './auth-types'
 import type { WorkCategory as TaxonomyWorkCategory } from './taxonomy'
 
 export {
@@ -7,6 +8,9 @@ export {
   type FilterCategory,
   type WorkCategory,
 } from './taxonomy'
+
+export type { WorkStatus } from './auth-types'
+export type { PublicUser, UserRole } from './auth-types'
 
 export const allowedLicenses = [
   'All rights reserved / 保留所有权利',
@@ -44,6 +48,10 @@ export type Work = {
   origin: WorkOrigin
   submittedBy?: string
   tags?: string[]
+  status?: WorkStatus
+  ownerId?: string | null
+  body?: string
+  updatedAt?: string
 }
 
 export type Creator = {

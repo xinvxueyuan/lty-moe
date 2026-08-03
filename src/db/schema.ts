@@ -1,4 +1,4 @@
-export const schemaVersion = 2
+export const schemaVersion = 3
 
 export const baseSchema = `
 CREATE TABLE IF NOT EXISTS works (
@@ -20,7 +20,11 @@ CREATE TABLE IF NOT EXISTS works (
   ai_disclosure TEXT NOT NULL,
   origin TEXT NOT NULL,
   submitted_by TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  status TEXT NOT NULL DEFAULT 'published',
+  owner_id TEXT,
+  body TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -43,9 +47,35 @@ CREATE TABLE IF NOT EXISTS work_tags (
   FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  handle TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'creator',
+  bio TEXT NOT NULL DEFAULT '',
+  avatar_url TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_work_tags_tag_id ON work_tags(tag_id);
 CREATE INDEX IF NOT EXISTS idx_works_category ON works(category);
+CREATE INDEX IF NOT EXISTS idx_works_status ON works(status);
+CREATE INDEX IF NOT EXISTS idx_works_owner ON works(owner_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token_hash);
+CREATE INDEX IF NOT EXISTS idx_users_handle ON users(handle);
 `
 
-/** @deprecated use baseSchema; kept for import clarity during migration */
 export const schema = baseSchema

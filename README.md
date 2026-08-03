@@ -29,6 +29,18 @@ curl -X POST http://127.0.0.1:3000/api/images \
 # → {"url":"/uploads/img-….png","filename":"img-….png","size":…,"contentType":"image/png"}
 ```
 
+## 账号与后台
+
+| 区域                  | 路径                                               | 说明                           |
+| --------------------- | -------------------------------------------------- | ------------------------------ |
+| 登录 / 注册           | `/login` `/register`                               | 创作者账号；会话 Cookie + CSRF |
+| 用户中心              | `/account`                                         | 资料编辑                       |
+| 创作者仪表盘          | `/dashboard`                                       | 草稿 / 已发布列表              |
+| 在线编辑器 / 发布后台 | `/dashboard/works/new` `/dashboard/works/:id/edit` | 正文、状态、发布               |
+| 管理后台              | `/admin`                                           | 用户角色、作品状态（需 admin） |
+
+首次空库会创建管理员：`admin@lty.local` / `admin123456`（可用环境变量 `ADMIN_EMAIL` `ADMIN_PASSWORD` 覆盖）。图床 `POST /api/images` 需登录。
+
 ## 本地开发
 
 ```bash
