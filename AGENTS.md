@@ -9,7 +9,11 @@
 - `src/lib/validate-work.ts` validates upload form input; `src/lib/api.ts` is the browser fetch client; `src/lib/works-cache.ts` is the in-memory client cache; `src/lib/save-upload.server.ts` writes upload files on the server.
 - `src/assets/images/` contains Vite-managed gallery artwork used by seed data.
 - `server.js` is the production Node HTTP server (SSR + static `/uploads` and client assets).
+- Auth: cookie sessions (`lty_session`), CSRF cookie (`lty_csrf`), scrypt passwords, roles `creator` | `admin`.
+- Platform routes: `/login` `/register` `/account` `/dashboard` `/dashboard/works/*` `/admin`.
 - `.github/workflows/` contains CI and CodeQL automation.
+
+Default seeded admin (only when users table empty): `admin@lty.local` / `admin123456` (override with `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_HANDLE`).
 
 ## Rendering Strategy (hybrid SPA + SSR)
 

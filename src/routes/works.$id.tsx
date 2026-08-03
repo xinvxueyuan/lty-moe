@@ -100,6 +100,13 @@ export default function WorkDetail() {
             <ArrowRight size={16} />
           </Link>
           <p className="detail-description">{work.description}</p>
+          {work.body && work.body !== work.description ? (
+            <div className="detail-body">
+              {work.body.split('\n').map((line, index) => (
+                <p key={`${index}-${line.slice(0, 12)}`}>{line || '\u00A0'}</p>
+              ))}
+            </div>
+          ) : null}
           {work.tags?.length ? (
             <div aria-label="作品标签" className="detail-tags">
               {work.tags.map((tag) => (

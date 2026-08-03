@@ -14,6 +14,11 @@ export type DbHelpers = {
   exec: Exec
 }
 
+async function tableColumns(db: sqlite3.Database, all: All, table: string): Promise<Set<string>> {
+  const rows = (await all(db, `PRAGMA table_info(${table})`)) as { name: string }[]
+  return new Set(rows.map((row) => row.name))
+}
+
 export async function migrateDatabase(db: sqlite3.Database, helpers: DbHelpers): Promise<void> {
   const { run, get, exec } = helpers
   await exec(db, baseSchema)
@@ -25,6 +30,9 @@ export async function migrateDatabase(db: sqlite3.Database, helpers: DbHelpers):
 
   if (current < 2) {
     await migrateToV2(db, helpers)
+  }
+  if (current < 3) {
+    await migrateToV3(db, helpers)
   }
 
   await run(
@@ -54,4 +62,29 @@ async function migrateToV2(db: sqlite3.Database, helpers: DbHelpers): Promise<vo
       await run(db, `UPDATE works SET category = ? WHERE id = ?`, [normalized, row.id])
     }
   }
+}
+
+async function migrateToV3(db: sqlite3.Database, helpers: DbHelpers): Promise<void> {
+  const { run, all, exec } = helpers
+  const columns = await tableColumns(db, all, 'works')
+
+  if (!columns.has('status')) {
+    await exec(db, `ALTER TABLE works ADD COLUMN status TEXT NOT NULL DEFAULT 'published'`)
+  }
+  if (!columns.has('owner_id')) {
+    await exec(db, `ALTER TABLE works ADD COLUMN owner_id TEXT`)
+  }
+  if (!columns.has('body')) {
+    await exec(db, `ALTER TABLE works ADD COLUMN body TEXT NOT NULL DEFAULT ''`)
+  }
+  if (!columns.has('updated_at')) {
+    await exec(
+      db,
+      `ALTER TABLE works ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))`,
+    )
+  }
+
+  await run(db, `UPDATE works SET status = 'published' WHERE status IS NULL OR status = ''`)
+  await run(db, `UPDATE works SET body = COALESCE(body, '')`)
+  await run(db, `UPDATE works SET updated_at = COALESCE(updated_at, created_at, datetime('now'))`)
 }

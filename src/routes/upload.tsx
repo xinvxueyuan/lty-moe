@@ -10,21 +10,28 @@ import {
 } from '../data/types'
 import { insertWork } from '../db/client.server'
 import { invalidateWorksCache } from '../lib/api'
+import { requireUser } from '../lib/auth.server'
 import { saveUploadFile, validateImageFile } from '../lib/save-upload.server'
 import { slugFromText, validateWorkForm, type WorkFormInput } from '../lib/validate-work'
 
+export async function loader({ request }: { request: Request }) {
+  await requireUser(request)
+  return null
+}
+
 export async function action({ request }: { request: Request }) {
+  const user = await requireUser(request)
   const formData = await request.formData()
   const read = (name: string) => String(formData.get(name) ?? '')
   const input: WorkFormInput = {
     title: read('title'),
-    creator: read('creator'),
-    handle: read('handle'),
+    creator: read('creator') || user.displayName,
+    handle: read('handle') || user.handle,
     category: read('category'),
     description: read('description'),
     sourceUrl: read('sourceUrl'),
     license: read('license'),
-    maintainers: read('maintainers'),
+    maintainers: read('maintainers') || user.displayName,
     coAuthors: read('coAuthors'),
     aiDisclosure: read('aiDisclosure'),
     origin: read('origin'),
@@ -47,7 +54,15 @@ export async function action({ request }: { request: Request }) {
 
   const id = `${slugFromText(work.title) || 'untitled'}-${Date.now().toString(36)}`
   const saved = await saveUploadFile(file, id)
-  await insertWork({ ...work, id, image: saved.url })
+  await insertWork({
+    ...work,
+    id,
+    image: saved.url,
+    ownerId: user.id,
+    status: 'published',
+    body: work.description,
+    submittedBy: user.handle,
+  })
   return new Response(null, {
     status: 303,
     headers: { Location: `/works/${id}` },
