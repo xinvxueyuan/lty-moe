@@ -6,9 +6,28 @@ import { featuredCreators } from '../data/catalog'
 import type { Creator, FilterCategory, Work } from '../data/types'
 import { Badge } from '../components/ui/badge'
 import { listWorks } from '../db/client.server'
+import { fetchWorks } from '../lib/api'
+import { getCachedWorks, setCachedWorks } from '../lib/works-cache'
 
 export async function loader() {
   return { works: await listWorks(), featuredCreators }
+}
+
+export async function clientLoader({
+  serverLoader,
+}: {
+  serverLoader: () => Promise<{ works: Work[]; featuredCreators: Creator[] }>
+}) {
+  const cached = getCachedWorks()
+  if (cached) return { works: cached, featuredCreators }
+  try {
+    const works = await fetchWorks()
+    return { works, featuredCreators }
+  } catch {
+    const data = await serverLoader()
+    setCachedWorks(data.works)
+    return data
+  }
 }
 
 type LoaderData = { works: Work[]; featuredCreators: Creator[] }

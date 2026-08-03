@@ -9,5 +9,6 @@ export default [
   route('creator/:handle', './routes/creator.$handle.tsx'),
   route('api/works', './routes/api.works.ts'),
   route('api/works/:id', './routes/api.works.$id.ts'),
+  route('api/images', './routes/api.images.ts'),
   route('*', './routes/not-found.tsx'),
 ] satisfies RouteConfig

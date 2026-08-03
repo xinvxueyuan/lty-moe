@@ -19,6 +19,8 @@ import { getWorkById, listWorks } from '../db/client.server'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Textarea } from '../components/ui/textarea'
+import { fetchWork, fetchWorks } from '../lib/api'
+import { getCachedWork, getCachedWorks, setCachedWork, setCachedWorks } from '../lib/works-cache'
 
 export async function loader({ params }: { params: { id: string } }) {
   const work = await getWorkById(params.id)
@@ -27,6 +29,38 @@ export async function loader({ params }: { params: { id: string } }) {
   const currentIndex = works.findIndex((item) => item.id === work.id)
   const nextWork = works[(currentIndex + 1) % works.length]
   return { work, nextWork }
+}
+
+export async function clientLoader({
+  params,
+  serverLoader,
+}: {
+  params: { id: string }
+  serverLoader: () => Promise<{ work: Work; nextWork: Work }>
+}) {
+  const cachedWork = getCachedWork(params.id)
+  let works = getCachedWorks()
+  if (cachedWork && works?.length) {
+    const currentIndex = works.findIndex((item) => item.id === cachedWork.id)
+    const nextWork = works[(currentIndex + 1) % works.length] ?? cachedWork
+    return { work: cachedWork, nextWork }
+  }
+  try {
+    const [work, list] = await Promise.all([
+      fetchWork(params.id),
+      works ? Promise.resolve(works) : fetchWorks(),
+    ])
+    works = list
+    setCachedWorks(works)
+    setCachedWork(work)
+    const currentIndex = works.findIndex((item) => item.id === work.id)
+    const nextWork = works[(currentIndex + 1) % works.length] ?? work
+    return { work, nextWork }
+  } catch {
+    const data = await serverLoader()
+    setCachedWork(data.work)
+    return data
+  }
 }
 
 export default function WorkDetail() {

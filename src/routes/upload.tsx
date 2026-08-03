@@ -1,7 +1,4 @@
 import { ArrowUpRight, ImagePlus, Info, LoaderCircle } from 'lucide-react'
-import { mkdirSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
 import { Link, useActionData, useNavigation } from 'react-router'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
@@ -12,22 +9,9 @@ import {
   allowedOrigins,
 } from '../data/types'
 import { insertWork } from '../db/client.server'
+import { invalidateWorksCache } from '../lib/api'
+import { saveUploadFile, validateImageFile } from '../lib/save-upload.server'
 import { slugFromText, validateWorkForm, type WorkFormInput } from '../lib/validate-work'
-
-const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif']
-const maxImageBytes = 10 * 1024 * 1024
-
-function saveUpload(file: File, id: string): Promise<string> {
-  const extension = imageExtensions.find((ext) => file.name.toLowerCase().endsWith(ext)) ?? '.png'
-  const uploadsDir = process.env.UPLOADS_DIR || resolve(process.cwd(), 'uploads')
-  mkdirSync(uploadsDir, { recursive: true })
-  const filename = `${id}-${Date.now().toString(36)}${extension}`
-  return file
-    .arrayBuffer()
-    .then((buffer) =>
-      writeFile(join(uploadsDir, filename), Buffer.from(buffer)).then(() => `/uploads/${filename}`),
-    )
-}
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData()
@@ -47,30 +31,32 @@ export async function action({ request }: { request: Request }) {
     copyright: read('copyright'),
   }
 
-  const file = formData.get('image')
-  const hasFile = file instanceof File && file.size > 0
-  const extension = hasFile
-    ? imageExtensions.find((ext) => file.name.toLowerCase().endsWith(ext))
-    : undefined
-
   const errors: string[] = []
   const { errors: formErrors, work } = validateWorkForm(input)
   errors.push(...formErrors)
-  if (!hasFile) errors.push('请选择一张作品图片。')
-  if (hasFile && !extension) errors.push('图片格式必须是 PNG、JPG、WebP、GIF 或 AVIF。')
-  if (hasFile && file.size > maxImageBytes) errors.push('图片大小不能超过 10MB。')
 
-  if (errors.length || !work || !hasFile) {
+  const { file, errors: imageErrors } = validateImageFile(formData.get('image'))
+  errors.push(
+    ...imageErrors.map((error) => error.replace('请选择一张图片。', '请选择一张作品图片。')),
+  )
+
+  if (errors.length || !work || !file) {
     return { errors }
   }
 
   const id = `${slugFromText(work.title) || 'untitled'}-${Date.now().toString(36)}`
-  const image = await saveUpload(file, id)
-  await insertWork({ ...work, id, image })
+  const saved = await saveUploadFile(file, id)
+  await insertWork({ ...work, id, image: saved.url })
   return new Response(null, {
     status: 303,
     headers: { Location: `/works/${id}` },
   })
+}
+
+export async function clientAction({ serverAction }: { serverAction: () => Promise<unknown> }) {
+  const result = await serverAction()
+  invalidateWorksCache()
+  return result
 }
 
 export default function Upload() {
