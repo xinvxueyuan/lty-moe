@@ -8,36 +8,40 @@
   },
   "scripts": {
     "dev": "react-router dev",
-    "build": "react-router build && node scripts/prepare-pages.mjs",
+    "build": "react-router build",
+    "start": "node server.js",
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:submission": "node --test scripts/*.test.mjs",
+    "test:unit": "node --import ./node-test-hooks.mjs --test src/lib/*.test.ts src/db/*.test.ts",
     "test:e2e": "playwright test",
     "playwright:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
+    "@icons-pack/react-simple-icons": "^13.13.0",
+    "@react-router/node": "^8.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "@icons-pack/react-simple-icons": "^13.13.0",
     "isbot": "^5",
     "lucide-react": "^1.28.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.3.0",
+    "sqlite3": "^6.0.1",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@react-router/dev": "^8.3.0",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.4",
     "@types/react-dom": "^19.2.3",
+    "@types/sqlite3": "^3.1.11",
     "@vitejs/plugin-react": "^6.0.4",
-    "@eslint/js": "^10.0.1",
     "eslint": "^10.8.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import-x": "^4.17.1",
@@ -49,5 +53,8 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.46.3",
     "vite": "^8.2.0"
+  },
+  "allowScripts": {
+    "sqlite3@6.0.1": true
   }
 }

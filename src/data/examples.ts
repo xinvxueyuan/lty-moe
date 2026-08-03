@@ -6,7 +6,7 @@ import smallRitualsImage from '../assets/images/lty-small-rituals.png'
 import lastSunImage from '../assets/images/lty-last-sun.png'
 import type { Work } from './types'
 
-export const seedWorks: Work[] = [
+export const exampleWorks: Work[] = [
   {
     id: 'lunar-garden',
     title: '给天依的月面花园',

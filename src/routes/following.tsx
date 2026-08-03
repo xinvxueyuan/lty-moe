@@ -1,11 +1,17 @@
 import { Bell, Heart, ArrowUpRight } from 'lucide-react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLoaderData, useNavigate } from 'react-router'
 import { WorkGrid } from '../components/catalog'
-import { works } from '../data/catalog'
+import type { Work } from '../data/types'
+import { listWorks } from '../db/client.server'
 import { Button } from '../components/ui/button'
+
+export async function loader() {
+  return { works: await listWorks() }
+}
 
 export default function Following() {
   const navigate = useNavigate()
+  const { works } = useLoaderData<{ works: Work[] }>()
   return (
     <section className="archive-container page-shell">
       <div className="page-intro">

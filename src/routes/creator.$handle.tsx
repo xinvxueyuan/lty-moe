@@ -1,15 +1,23 @@
 import { ArrowRight, ExternalLink, Heart, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLoaderData } from 'react-router'
 import { WorkGrid } from '../components/catalog'
 import { getCreator, getCreatorWorks } from '../data/catalog'
+import type { Creator, Work } from '../data/types'
+import { listWorks } from '../db/client.server'
 import { Button } from '../components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 
+export async function loader({ params }: { params: { handle: string } }) {
+  const works = await listWorks()
+  return {
+    creator: getCreator(params.handle),
+    creatorWorks: getCreatorWorks(params.handle, works),
+  }
+}
+
 export default function CreatorDetail() {
-  const { handle = '' } = useParams()
-  const creator = getCreator(handle)
-  const creatorWorks = getCreatorWorks(handle)
+  const { creator, creatorWorks } = useLoaderData<{ creator: Creator; creatorWorks: Work[] }>()
   const [following, setFollowing] = useState(false)
   const [tab, setTab] = useState('works')
   return (

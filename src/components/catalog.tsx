@@ -1,7 +1,6 @@
 import { Bookmark, Heart, ArrowUpRight, SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { works } from '../data/catalog'
 import type { FilterCategory, Work } from '../data/types'
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
@@ -42,7 +41,7 @@ export function CategoryFilters({
   )
 }
 
-export function filterWorks(category: FilterCategory, query = '') {
+export function filterWorks(works: Work[], category: FilterCategory, query = '') {
   const normalizedQuery = query.toLowerCase().trim()
   return works.filter((work) => {
     const matchesCategory = category === '全部' || work.category === category
@@ -152,6 +151,6 @@ export function ResultsToolbar({ count, query }: { count: number; query?: string
   )
 }
 
-export function useFilteredWorks(category: FilterCategory, query: string) {
-  return useMemo(() => filterWorks(category, query), [category, query])
+export function useFilteredWorks(works: Work[], category: FilterCategory, query: string) {
+  return useMemo(() => filterWorks(works, category, query), [works, category, query])
 }

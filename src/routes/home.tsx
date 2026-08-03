@@ -1,12 +1,20 @@
 import { ArrowUpRight, ChevronRight, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLoaderData } from 'react-router'
 import { CategoryFilters, WorkGrid } from '../components/catalog'
-import { featuredCreators, works } from '../data/catalog'
-import type { FilterCategory } from '../data/types'
+import { featuredCreators } from '../data/catalog'
+import type { Creator, FilterCategory, Work } from '../data/types'
 import { Badge } from '../components/ui/badge'
+import { listWorks } from '../db/client.server'
+
+export async function loader() {
+  return { works: await listWorks(), featuredCreators }
+}
+
+type LoaderData = { works: Work[]; featuredCreators: Creator[] }
 
 export default function Home() {
+  const { works, featuredCreators } = useLoaderData<LoaderData>()
   const [category, setCategory] = useState<FilterCategory>('全部')
   const featured = works.find((work) => work.id === 'blue-hour') ?? works[0]
   const visibleWorks =

@@ -12,36 +12,30 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
-import { works, getCreator } from '../data/catalog'
+import { Link, useLoaderData, useNavigate } from 'react-router'
+import { getCreator } from '../data/catalog'
+import type { Work } from '../data/types'
+import { getWorkById, listWorks } from '../db/client.server'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Textarea } from '../components/ui/textarea'
 
+export async function loader({ params }: { params: { id: string } }) {
+  const work = await getWorkById(params.id)
+  if (!work) throw new Response('Not found', { status: 404 })
+  const works = await listWorks()
+  const currentIndex = works.findIndex((item) => item.id === work.id)
+  const nextWork = works[(currentIndex + 1) % works.length]
+  return { work, nextWork }
+}
+
 export default function WorkDetail() {
-  const { id = '' } = useParams()
+  const { work, nextWork } = useLoaderData<{ work: Work; nextWork: Work }>()
   const navigate = useNavigate()
-  const work = works.find((item) => item.id === id)
   const [liked, setLiked] = useState(false)
   const [saved, setSaved] = useState(false)
   const [comment, setComment] = useState('')
-  if (!work)
-    return (
-      <section className="archive-container page-shell">
-        <p className="eyebrow">404 / FILE NOT FOUND</p>
-        <h1>
-          这件作品还没有
-          <br />
-          <em>被归档。</em>
-        </h1>
-        <Link className="signal-link" to="/explore">
-          回到探索 <ArrowRight size={16} />
-        </Link>
-      </section>
-    )
   const creator = getCreator(work.handle)
-  const currentIndex = works.findIndex((item) => item.id === work.id)
-  const nextWork = works[(currentIndex + 1) % works.length]
   return (
     <section className="archive-container page-shell detail-page">
       <button className="back-button" onClick={() => navigate(-1)} type="button">

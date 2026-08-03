@@ -27,8 +27,8 @@ jobs:
         run: npm run lint
       - name: Check formatting
         run: npm run format:check
-      - name: Test submission parser
-        run: npm run test:submission
+      - name: Unit tests
+        run: npm run test:unit
       - name: Security audit
         run: npm audit --omit=dev --ignore-scripts --audit-level=moderate
       - name: Build site

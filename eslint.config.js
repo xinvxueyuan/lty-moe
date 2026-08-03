@@ -37,17 +37,18 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.mjs'],
+    files: ['server.js', 'node-test-hooks.mjs'],
     languageOptions: {
       globals: {
         URL: 'readonly',
+        Buffer: 'readonly',
         console: 'readonly',
         process: 'readonly',
       },
     },
   },
   {
-    files: ['src/components/catalog.tsx'],
+    files: ['src/components/catalog.tsx', 'src/routes/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

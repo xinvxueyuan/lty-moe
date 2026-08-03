@@ -1,27 +1,13 @@
 # 天依档案 / lty-moe
 
-一个围绕洛天依的非官方同人作品档案室。
+一个围绕洛天依的非官方同人作品档案室。自托管动态应用：React Router SSR + SQLite + 本地图片上传。
 
 ## 投稿流程
 
-1. 在 GitHub Issues 中选择「洛天依同人作品投稿」。
-2. 按表单填写作品信息，并把图片拖拽到作品图片字段。
-3. 许可证、维护者、共同作者、AI 使用声明和原创/转载来源会和作品一起进入档案。
-4. 提交后，带有 `submission:work` 标签的 Issue 会由 GitHub Actions 自动整理为 PR。
-5. PR 通过构建检查并获得维护者批准后合并。
-6. 合并后自动删除投稿分支，并由 GitHub Pages 发布最新站点。
-
-## Discussions 数据库
-
-投稿作品的权威记录存储在 GitHub Discussions 的「作品档案」分类中，每个作品对应一个 Discussion。请在仓库 Settings 中启用 Discussions，并创建名为「作品档案」的分类；归一化 Action 会拒绝写入不存在的分类。
-
-每日 `Normalize Discussions database` Action 会读取 Discussions，按照来源 Issue、规范化原作链接，或规范化作者 ID 加精确标题合并高置信度重复项，并生成 `src/data/submissions.json` 与 `src/data/authors.json` 快照。快照只由 Action 生成，不应手工编辑；无法通过强键确认的相似条目会保留给维护者处理。
-
-首次启用时可从现有投稿快照运行一次 `workflow_dispatch` 完成迁移。Action 使用 `GITHUB_TOKEN` 的 `contents: write`、`discussions: write` 和 `pull-requests: write` 权限；若仓库策略禁止该 Token 修改 Discussions，需要改用具有相同仓库权限的 `DISCUSSIONS_TOKEN` Secret。
-
-如果需要修改已经发布的 Issue 投稿，请选择「更新天依档案条目」，填写作品详情页中的 `issue-*` 作品 ID。更新会生成独立 PR，种子作品不接受通过 Issue 直接修改。
-
-Pages 的实际地址由 GitHub Pages deployment output 动态返回，工作流不会硬编码域名。
+1. 打开站点上的「投稿」页面（`/upload`）。
+2. 填写作品信息并上传图片（PNG / JPG / WebP / GIF / AVIF，最大 10MB）。
+3. 提交后作品会**立即发布**到展厅，无需审核队列。
+4. 许可证、维护者、共同作者、AI 使用声明和原创/转载来源会与作品一并写入档案。
 
 ## 本地开发
 
@@ -30,22 +16,44 @@ npm ci
 npm run dev
 ```
 
-## 构建与测试
+开发服务器会在首次访问时创建 SQLite 库（默认 `data/lty-moe.db`）并在表为空时写入示例作品。上传目录默认 `uploads/`。
+
+## 构建与运行
 
 ```bash
 npm run typecheck
 npm run lint
 npm run format:check
-npm run test:submission
+npm run test:unit
 npm run build
-npm run playwright:install
-npm run test:e2e
+npm run start
 ```
 
-应用使用 React Router Framework Mode 的静态预渲染（`ssr: false`），生产静态文件位于 `build/client`。GitHub Pages 的路径由 `VITE_BASE_PATH` 注入，例如：
+生产服务器读取 `build/` 产物，默认监听 `PORT`（3000），环境变量：
+
+| 变量            | 默认                | 说明            |
+| --------------- | ------------------- | --------------- |
+| `DATABASE_PATH` | `./data/lty-moe.db` | SQLite 文件路径 |
+| `UPLOADS_DIR`   | `./uploads`         | 上传图片目录    |
+| `PORT`          | `3000`              | HTTP 端口       |
+
+## Docker
 
 ```bash
-VITE_BASE_PATH=/lty-moe/ npm run build
+docker build -t lty-moe .
+docker run --rm -p 3000:3000 \
+  -v lty-data:/app/data \
+  -v lty-uploads:/app/uploads \
+  lty-moe
+```
+
+请挂载 `data/` 与 `uploads/` 卷，否则容器重建会丢失数据库与上传文件。
+
+## 端到端测试
+
+```bash
+npm run playwright:install
+npm run test:e2e
 ```
 
 ## Security
