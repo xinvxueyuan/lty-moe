@@ -40,7 +40,7 @@
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.4",
     "@types/react-dom": "^19.2.3",
-    "@types/sqlite3": "^3.1.11",
+    "@types/sqlite3": "^5.1.0",
     "@vitejs/plugin-react": "^6.0.4",
     "eslint": "^10.8.0",
     "eslint-import-resolver-typescript": "^4.4.4",
